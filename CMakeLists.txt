@@ -2,7 +2,7 @@ cmake_minimum_required ( VERSION 3.19 )
 
 include ( "${CMAKE_SOURCE_DIR}/cmake/cpp.cmake" )
 
-project ( dgm-lib )
+project ( dgm-ai-fsm-lib )
 include ( "${CMAKE_SOURCE_DIR}/cmake/version.cmake" )
 enable_testing()
 

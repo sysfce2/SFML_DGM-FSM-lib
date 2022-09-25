@@ -9,10 +9,12 @@
 #include <ostream>
 #include <iostream>
 
-namespace dgm {
-	namespace fsm {
+namespace dgm
+{
+	namespace fsm
+	{
 		template<typename T>
-		concept EnumConcept = std::is_scoped_enum_v<T>;
+		concept EnumConcept = true;//std::is_enum_v<T>;
 
 		template<class BlackboardType>
 		using Condition = std::function<bool(const BlackboardType&)>;
@@ -24,10 +26,11 @@ namespace dgm {
 		using Logic = std::function<void(BlackboardType&)>;
 
 		template<class BlackboardType, EnumConcept StateType>
-		struct State {
+		struct State
+		{
 			std::vector<Transition<BlackboardType, StateType>> transitions;
 			Logic<BlackboardType> logic;
-			StateType targetState;
+			StateType targetState = StateType();
 		};
 
 		/**
@@ -63,7 +66,8 @@ namespace dgm {
 		 *    is also transition). This prevents FSM from freezing the app by constantly looping.
 		 */
 		template<class BlackboardType, EnumConcept StateType>
-		class Fsm final {
+		class Fsm final
+		{
 		private:
 			std::map<StateType, State<BlackboardType, StateType>> states;
 			StateType currentState = StateType();
@@ -72,17 +76,19 @@ namespace dgm {
 			bool loggingEnabled = false;
 			std::reference_wrapper<std::ostream> log = std::cout;
 			std::map<StateType, std::string> stateToString;
-			std::function<std::string(const BlackboardType&)> blackboardToString = [](const BlackboardType&) -> std::string { return "NOT IMPLEMENTED"; };
+			std::function<std::string(const BlackboardType&)> blackboardToString = [] (const BlackboardType&) -> std::string { return "NOT IMPLEMENTED"; };
 
 		private:
 			[[nodiscard]]
-			std::string getStateName(StateType state) const noexcept {
+			std::string getStateName(StateType state) const noexcept
+			{
 				return stateToString.count(state)
 					? stateToString.at(state)
 					: "UNDEFINED(" + std::to_string(static_cast<int>(state)) + ")";
 			}
 
-			void logCurrentState(const BlackboardType& b) {
+			void logCurrentState(const BlackboardType& b)
+			{
 				if (!loggingEnabled) return;
 
 				log.get() << std::format(
@@ -91,7 +97,8 @@ namespace dgm {
 					blackboardToString(b));
 			}
 
-			void logTransitionTaken(bool defaultTransition = false) {
+			void logTransitionTaken(bool defaultTransition = false)
+			{
 				if (!loggingEnabled)
 					return;
 
@@ -103,13 +110,17 @@ namespace dgm {
 
 		public:
 			Fsm(std::map<StateType, State<BlackboardType, StateType>>&& states)
-				: states(states) {}
+				: states(states)
+			{}
 
-			void update(BlackboardType& blackboard) {
+			void update(BlackboardType& blackboard)
+			{
 				logCurrentState(blackboard);
 
-				for (auto&& transition : states[currentState].transitions) {
-					if (transition.first(blackboard)) {
+				for (auto&& transition : states[currentState].transitions)
+				{
+					if (transition.first(blackboard))
+					{
 						currentState = transition.second;
 						logTransitionTaken();
 						return;
@@ -122,7 +133,8 @@ namespace dgm {
 				logTransitionTaken(true);
 			}
 
-			void reset(StateType state) noexcept {
+			void reset(StateType state) noexcept
+			{
 				currentState = state;
 			}
 
@@ -137,7 +149,8 @@ namespace dgm {
 				log = logger;
 			}
 
-			[[nodiscard]] constexpr auto getState() const noexcept -> StateType {
+			[[nodiscard]] constexpr auto getState() const noexcept -> StateType
+			{
 				return currentState;
 			}
 		};

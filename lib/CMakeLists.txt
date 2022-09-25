@@ -2,7 +2,7 @@ cmake_minimum_required ( VERSION 3.19 )
 
 project ( libfsm )
 
-include_directories ( ${JSON_FOLDER} )
+include_directories ( "${JSON_FOLDER}/include" )
 
 file (
 	GLOB LIB_HEADERS
