@@ -4,14 +4,39 @@
 #include <FsmDecorators.hpp>
 #include "CsvParser.hpp"
 
-enum class State {
+enum class State
+{
 	Start,
 	CommaFound,
 	NewlineFound,
 	End
 };
 
-TEST_CASE("CanCompileBuilderSyntax", "Builder") {
+TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
+{
+	SECTION("Properly executes FSM with one state and no transitions")
+	{
+		REQUIRE(false);
+	}
+
+	SECTION("Properly executes FSM with two states and just default transitions")
+	{
+		REQUIRE(false);
+	}
+
+	SECTION("Properly calls predicates on a state")
+	{
+		REQUIRE(false);
+	}
+
+	SECTION("Can take transitions without executing default behaviour")
+	{
+		REQUIRE(false);
+	}
+}
+
+TEST_CASE("CanCompileBuilderSyntax", "[Fsm/FsmBuilder]")
+{
 	using dgm::fsm::decorator::Merge;
 
 	auto fsm = dgm::fsm::Builder<Blackboard, State>()
@@ -24,7 +49,7 @@ TEST_CASE("CanCompileBuilderSyntax", "Builder") {
 		.exec(CsvParser::storeWord).andGoTo(State::Start)
 		.with(State::NewlineFound)
 		.exec(Merge<Blackboard>(
-			CsvParser::handleNewline, 
+			CsvParser::handleNewline,
 			CsvParser::storeWord)
 		).andGoTo(State::Start)
 		.build();

@@ -39,9 +39,9 @@ StateMap dgm::fsm::JsonLoader::loadFromStream(std::istream& stream) const
 			);
 		}
 
-		for (auto&& logic : state["logic"])
+		for (auto&& logic : state["behaviors"])
 		{
-			result[currentIndex].logic.push_back(logic.get<std::string>());
+			result[currentIndex].behaviors.push_back(logic.get<std::string>());
 		}
 
 		result[currentIndex].defaultTransition = stateToIndex.at(state["defaultTransition"]);

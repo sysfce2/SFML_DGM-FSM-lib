@@ -57,7 +57,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 		loader.states = {
 			{0, {
 				.transitions = {},
-				.logic = { "logic1" },
+				.behaviors = { "logic1" },
 				.defaultTransition = 0
 			}}
 		};
@@ -76,12 +76,12 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 					{ "cond1", 1 },
 					{ "cond2", 1 }
 				},
-				.logic = { "logic1" },
+				.behaviors = { "logic1" },
 				.defaultTransition = 1
 			}},
 			{1, {
 				.transitions = {},
-				.logic = { "logic2" },
+				.behaviors = { "logic2" },
 				.defaultTransition = 0
 			}}
 		};
@@ -96,12 +96,34 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 		REQUIRE(logic2_callCnt == 1u);
 	}
 
+	SECTION("Can merge multiple logics")
+	{
+		loader.states = {
+			{0, {
+				.transitions = {},
+				.behaviors = {
+					"logic1",
+					"logic2",
+					"logic3"
+				},
+				.defaultTransition = 0
+			}}
+		};
+
+		dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		fsm.update(blackboard);
+
+		REQUIRE(logic1_callCnt == 1u);
+		REQUIRE(logic2_callCnt == 1u);
+		REQUIRE(logic3_callCnt == 1u);
+	}
+
 	SECTION("Throws if referencing not-registered logic")
 	{
 		loader.states = {
 			{0, {
 				.transitions = {},
-				.logic = { "notRegisteredLogic" },
+				.behaviors = { "notRegisteredLogic" },
 				.defaultTransition = 0
 			}}
 		};
@@ -117,7 +139,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 		loader.states = {
 			{0, {
 				.transitions = { { "notRegisteredLogic", 0 } },
-				.logic = { "logic1" },
+				.behaviors = { "logic1" },
 				.defaultTransition = 0
 			}}
 		};
@@ -133,8 +155,24 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 		loader.states = {
 			{0, {
 				.transitions = {},
-				.logic = { "logic1" },
+				.behaviors = { "logic1" },
 				.defaultTransition = 1
+			}}
+		};
+
+		REQUIRE_THROWS([&] ()
+		{
+			dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		} ());
+	}
+
+	SECTION("Throws if logics are empty")
+	{
+		loader.states = {
+			{0, {
+				.transitions = {},
+				.behaviors = {},
+				.defaultTransition = 0
 			}}
 		};
 

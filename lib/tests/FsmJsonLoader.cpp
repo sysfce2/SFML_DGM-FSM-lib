@@ -21,7 +21,7 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 	{
 		"name": "StateStart",
 		"transitions": [],
-		"logic": [
+		"behaviors": [
 			"doNothing1",
 			"doNothing2"
 		],
@@ -33,9 +33,9 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 
 		REQUIRE(states.size() == 1u);
 		REQUIRE(states[0].transitions.empty());
-		REQUIRE(states[0].logic.size() == 2u);
-		REQUIRE(states[0].logic[0] == "doNothing1");
-		REQUIRE(states[0].logic[1] == "doNothing2");
+		REQUIRE(states[0].behaviors.size() == 2u);
+		REQUIRE(states[0].behaviors[0] == "doNothing1");
+		REQUIRE(states[0].behaviors[1] == "doNothing2");
 		REQUIRE(states[0].defaultTransition == 0u);
 	}
 
@@ -51,7 +51,7 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 				"target": "StateLogic"
 			}
 		],
-		"logic": [
+		"behaviors": [
 			"doNothing1",
 			"doNothing2"
 		],
@@ -69,7 +69,7 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 				"target": "StateStart"
 			}
 		],
-		"logic": [
+		"behaviors": [
 			"logic"
 		],
 		"defaultTransition": "StateFinish"
@@ -77,7 +77,7 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 	{
 		"name": "StateFinish",
 		"transitions": [],
-		"logic": [
+		"behaviors": [
 			"doNothing"
 		],
 		"defaultTransition": "StateFinish"
@@ -92,9 +92,9 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 		REQUIRE(states[0].transitions.size() == 1u);
 		REQUIRE(states[0].transitions[0].first == "cond1");
 		REQUIRE(states[0].transitions[0].second == 1);
-		REQUIRE(states[0].logic.size() == 2u);
-		REQUIRE(states[0].logic[0] == "doNothing1");
-		REQUIRE(states[0].logic[1] == "doNothing2");
+		REQUIRE(states[0].behaviors.size() == 2u);
+		REQUIRE(states[0].behaviors[0] == "doNothing1");
+		REQUIRE(states[0].behaviors[1] == "doNothing2");
 		REQUIRE(states[0].defaultTransition == 0u);
 
 		REQUIRE(states[1].transitions.size() == 2u);
@@ -102,11 +102,11 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 		REQUIRE(states[1].transitions[0].second == 0u);
 		REQUIRE(states[1].transitions[1].first == "cond3");
 		REQUIRE(states[1].transitions[1].second == 0u);
-		REQUIRE(states[1].logic[0] == "logic");
+		REQUIRE(states[1].behaviors[0] == "logic");
 		REQUIRE(states[1].defaultTransition == 2u);
 
 		REQUIRE(states[2].transitions.size() == 0u);
-		REQUIRE(states[2].logic[0] == "doNothing");
+		REQUIRE(states[2].behaviors[0] == "doNothing");
 		REQUIRE(states[2].defaultTransition == 2u);
 	}
 
@@ -122,7 +122,7 @@ TEST_CASE("loadFromStream", "[FsmJsonLoader]")
 				"target": "StateLogic"
 			}
 		],
-		"logic": [
+		"behaviors": [
 			"doNothing1",
 			"doNothing2"
 		],

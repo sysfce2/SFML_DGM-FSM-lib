@@ -6,7 +6,7 @@
 
 #include <Fsm.hpp>
 #include <FsmLoader.hpp>
-#include <FsmBuilder.hpp>
+#include <FsmDecorators.hpp>
 
 namespace dgm
 {
@@ -23,25 +23,35 @@ namespace dgm
 
 		private:
 			template<class T>
-			std::string keysToString(const std::map<std::string, T>& map, const std::string& delimiter) const
+			std::string keysToString(
+				const std::map<std::string, T>& map,
+				const std::string& delimiter) const
 			{
 				return std::accumulate(
 					++(map.begin()),
 					map.end(),
 					map.begin()->first,
-					[&delimiter] (const std::string& out, const decltype(*(map.begin())) item) -> std::string
- {
-	 return out + delimiter + item.first;
+					[&delimiter](
+						const std::string& out,
+						const decltype(*(map.begin())) item) -> std::string
+					{
+						return out
+							+ delimiter
+							+ item.first;
 					});
 			}
 
 		public:
-			void registerPredicate(const std::string& name, Condition<BlackboardType> condition)
+			void registerPredicate(
+				const std::string& name,
+				Condition<BlackboardType> condition)
 			{
 				predicates[name] = condition;
 			}
 
-			void registerLogic(const std::string& name, Logic<BlackboardType> logic)
+			void registerLogic(
+				const std::string& name,
+				Logic<BlackboardType> logic)
 			{
 				logics[name] = logic;
 			}
@@ -65,7 +75,6 @@ namespace dgm
 			Fsm<BlackboardType, unsigned> loadFromFile(const std::string& path) const
 			{
 				auto states = loader.loadFromFile(path);
-				auto builder = dgm::fsm::Builder<BlackboardType, unsigned>();
 
 				std::map<unsigned, State<BlackboardType, unsigned>> finalStates;
 				auto getCheckedStateId = [&] (unsigned id) -> unsigned
@@ -88,8 +97,21 @@ namespace dgm
 							getCheckedStateId(transition.second) });
 					}
 
-					// TODO: merging logics
-					fstate.logic = logics.at(state.logic[0]);
+					if (state.behaviors.empty())
+					{
+						throw std::runtime_error("Behaviors must not be empty");
+					}
+
+					Logic<BlackboardType> finalLogic = logics.at(state.behaviors[0]);
+
+					for (unsigned i = 1; i < state.behaviors.size(); i++)
+					{
+						finalLogic = dgm::fsm::decorator::Merge<BlackboardType>(
+							finalLogic,
+							logics.at(state.behaviors[i]));
+					}
+
+					fstate.logic = finalLogic;
 					fstate.targetState = getCheckedStateId(state.defaultTransition);
 				}
 
