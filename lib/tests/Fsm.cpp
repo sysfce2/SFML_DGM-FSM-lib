@@ -14,24 +14,80 @@ enum class State
 
 TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 {
-	SECTION("Properly executes FSM with one state and no transitions")
+	unsigned logic1_cnt = 0;
+	unsigned logic2_cnt = 0;
+	unsigned pred1_cnt = 0;
+	unsigned pred2_cnt = 0;
+	unsigned pred3_cnt = 0;
+
+	auto logic1 = [&] (Blackboard&) { logic1_cnt++; };
+	auto logic2 = [&] (Blackboard&) { logic2_cnt++; };
+	auto predicate1 = [&] (const Blackboard&) { pred1_cnt++; return false; };
+	auto predicate2 = [&] (const Blackboard&) { pred2_cnt++; return false; };
+	auto predicate3 = [&] (const Blackboard&) { pred3_cnt++; return true; };
+
+	Blackboard blackboard;
+
+	SECTION("Properly executes FSM with one state and just default transitions")
 	{
-		REQUIRE(false);
+		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+			.with(State::Start)
+			.exec(logic1).andLoop()
+			.build();
+
+		fsm.update(blackboard);
+		fsm.update(blackboard);
+
+		REQUIRE(logic1_cnt == 2u);
 	}
 
 	SECTION("Properly executes FSM with two states and just default transitions")
 	{
-		REQUIRE(false);
+		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+			.with(State::Start)
+			.exec(logic1).andGoTo(State::End)
+			.with(State::End)
+			.exec(logic2).andGoTo(State::Start)
+			.build();
+
+		fsm.update(blackboard);
+		fsm.update(blackboard);
+
+		REQUIRE(logic1_cnt == 1u);
+		REQUIRE(logic2_cnt == 1u);
 	}
 
 	SECTION("Properly calls predicates on a state")
 	{
-		REQUIRE(false);
+		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+			.with(State::Start)
+			.when(predicate1).goTo(State::Start)
+			.orWhen(predicate2).goTo(State::Start)
+			.otherwiseExec(logic1).andLoop()
+			.build();
+
+		fsm.update(blackboard);
+
+		REQUIRE(pred1_cnt == 1u);
+		REQUIRE(pred2_cnt == 1u);
 	}
 
 	SECTION("Can take transitions without executing default behaviour")
 	{
-		REQUIRE(false);
+		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+			.with(State::Start)
+			.when(predicate3).goTo(State::End)
+			.otherwiseExec(logic1).andLoop()
+			.with(State::End)
+			.exec(logic2).andLoop()
+			.build();
+
+		fsm.update(blackboard);
+		fsm.update(blackboard);
+
+		REQUIRE(pred3_cnt == 1u);
+		REQUIRE(logic1_cnt == 0u);
+		REQUIRE(logic2_cnt == 1u);
 	}
 }
 
