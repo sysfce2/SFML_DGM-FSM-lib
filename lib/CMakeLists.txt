@@ -42,3 +42,28 @@ target_compile_options ( ${PROJECT_NAME}
 )
 
 add_subdirectory ( tests )
+
+# Packaging
+
+set ( DEBUG_BINARY_DIR   "${CMAKE_CURRENT_BINARY_DIR}/Debug" )
+set ( RELEASE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/Release" )
+
+install (
+	DIRECTORY    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+	DESTINATION  "."
+)
+
+install (
+	FILES        "${RELEASE_BINARY_DIR}/libfsm.lib"
+	DESTINATION  "lib"
+)
+
+install (
+	FILES        "${DEBUG_BINARY_DIR}/libfsm-d.lib"
+	DESTINATION  "lib"
+)
+
+install (
+	FILES        "${DEBUG_BINARY_DIR}/libfsm-d.pdb"
+	DESTINATION  "lib"
+)

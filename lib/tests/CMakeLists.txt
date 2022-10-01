@@ -7,14 +7,13 @@ include_directories ( ${CATCH_FOLDER} )
 file (
 	GLOB TEST_HEADERS
 	CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
+	"${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
 )
 
 file (
 	GLOB TEST_SOURCES
 	CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-	# "${CMAKE_CURRENT_SOURCE_DIR}/../.editorconfig"
+	"${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 
 source_group (
