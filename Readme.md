@@ -8,8 +8,8 @@ This is a C++ library meant for building and running Final State Machines, with 
 
  * [FSM architecture](#fsm-architecture)
  * [How to build the FSM](#how-to-build-the-fsm)
-	* [dgm::fsm::Builder](#dgm-fsm-builder)
-	* [dgm::fsm::Factory](#dgm-fsm-factory)
+	* [dgm::fsm::Builder](#dgmfsmbuilder)
+	* [dgm::fsm::Factory](#dgmfsmfactory)
 
 ## FSM architecture
 
