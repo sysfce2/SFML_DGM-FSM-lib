@@ -216,16 +216,8 @@ FSM::update(State = End):
 	SECTION("Provides annotations")
 	{
 		const std::string refAnnotations = R"({
-"predicates": [
-cond1,
-cond2,
-cond3
-]
-"behaviors": [
-logic1,
-logic2,
-logic3
-]
+    "predicates": [cond1, cond2, cond3]
+    "behaviors": [logic1, logic2, logic3]
 })";
 
 		REQUIRE(factory.getAnnotations() == refAnnotations);

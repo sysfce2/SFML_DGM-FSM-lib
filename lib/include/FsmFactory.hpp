@@ -2,7 +2,6 @@
 
 #include <string>
 #include <map>
-#include <numeric>
 
 #include <Fsm.hpp>
 #include <FsmLoader.hpp>
@@ -10,9 +9,25 @@
 
 namespace dgm
 {
-
 	namespace fsm
 	{
+		namespace priv
+		{
+			std::string getAnnotations(
+					const std::vector<std::string>& predicateNames,
+					const std::vector<std::string>& behaviorNames
+			);
+
+			template<class T>
+			static std::vector<std::string> getMapKeys(const std::map<std::string, T>& map)
+			{
+				std::vector<std::string> keys;
+				keys.reserve(map.size());
+				for (auto&& [key, _] : map)
+					keys.push_back(key);
+				return keys;
+			}
+		}
 
 		template<class BlackboardType>
 		class Factory final
@@ -20,26 +35,6 @@ namespace dgm
 			LoaderInterface& loader;
 			std::map<std::string, Condition<BlackboardType>> predicates;
 			std::map<std::string, Logic<BlackboardType>> logics;
-
-		private:
-			template<class T>
-			std::string keysToString(
-				const std::map<std::string, T>& map,
-				const std::string& delimiter) const
-			{
-				return std::accumulate(
-					++(map.begin()),
-					map.end(),
-					map.begin()->first,
-					[&delimiter](
-						const std::string& out,
-						const decltype(*(map.begin())) item) -> std::string
-					{
-						return out
-							+ delimiter
-							+ item.first;
-					});
-			}
 
 		public:
 			void registerPredicate(
@@ -59,16 +54,10 @@ namespace dgm
 			[[nodiscard]]
 			std::string getAnnotations() const
 			{
-				const auto serializedPredicates = keysToString(predicates, ",\n");
-				const auto seralizedLogics = keysToString(logics, ",\n");
-
-				return std::vformat(
-					"{{\n"
-					"\"predicates\": [\n{}\n]\n"
-					"\"behaviors\": [\n{}\n]\n"
-					"}}", std::make_format_args(
-						serializedPredicates,
-						seralizedLogics));
+				return priv::getAnnotations(
+					priv::getMapKeys(predicates),
+					priv::getMapKeys(logics)
+				);
 			}
 
 			[[nodiscard]]
@@ -130,7 +119,6 @@ namespace dgm
 				: loader(loader)
 			{}
 		};
-
 	}
 
 }

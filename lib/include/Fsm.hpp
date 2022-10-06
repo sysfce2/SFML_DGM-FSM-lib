@@ -87,7 +87,7 @@ namespace dgm
 					: "UNDEFINED(" + std::to_string(static_cast<int>(state)) + ")";
 			}
 
-			void logCurrentState(const BlackboardType& b)
+			void logCurrentState()
 			{
 				if (!loggingEnabled) return;
 
@@ -114,7 +114,7 @@ namespace dgm
 
 			void update(BlackboardType& blackboard)
 			{
-				logCurrentState(blackboard);
+				logCurrentState();
 
 				for (auto&& transition : states[currentState].transitions)
 				{
