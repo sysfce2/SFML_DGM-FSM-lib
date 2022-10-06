@@ -140,7 +140,7 @@ auto buildFsm() {
 
 As you can see, `Blackboard` and `State` are required template parameters for the builder (and FSM itself) so typechecking can be performed. The parser logic should be pretty obvious from the FSM structure. Note use of the `Merge` decorator to fuse two primitives together to make more complicated behaviour. Also note that decorators require explicit template instantiation since C++ type deduction system is sometimes garbage.
 
-Returned object is your fsm. You can use `reset` to set to any state you need. By default it will be set to the default value of the `State` enum (`Start` in this case). Call `update` to perform single FSM "tick".
+Returned object is your fsm. You can use `setState` to set to any state you need. By default it will be set to the default value of the `State` enum (`Start` in this case). Call `update` to perform single FSM "tick".
 
 ### dgm::fsm::Factory
 
