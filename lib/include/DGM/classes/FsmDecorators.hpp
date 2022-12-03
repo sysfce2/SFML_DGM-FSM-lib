@@ -13,7 +13,7 @@ namespace dgm
 			[[nodiscard]]
 			auto And(Condition<BlackboardType> cond1, Condition<BlackboardType> cond2)
 			{
-				return[cond1, cond2] (const BlackboardType& bb) -> Condition<BlackboardType>
+				return[cond1, cond2] (const BlackboardType& bb)
 				{
 					return cond1(bb) && cond2(bb);
 				};
@@ -23,7 +23,7 @@ namespace dgm
 			[[nodiscard]]
 			auto Or(Condition<BlackboardType> cond1, Condition<BlackboardType> cond2)
 			{
-				return[cond1, cond2] (const BlackboardType& bb) -> Condition<BlackboardType>
+				return[cond1, cond2] (const BlackboardType& bb)
 				{
 					return cond1(bb) || cond2(bb);
 				};
@@ -33,7 +33,7 @@ namespace dgm
 			[[nodiscard]]
 			auto Not(Condition<BlackboardType> cond1)
 			{
-				return[cond1] (const BlackboardType& bb) -> Condition<BlackboardType>
+				return[cond1] (const BlackboardType& bb)
 				{
 					return !cond1(bb);
 				};
