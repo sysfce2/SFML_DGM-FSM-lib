@@ -1,4 +1,5 @@
 dgm-ai-fsm v1.x.x
+	- Add default constructor for dgm::fsm::Fsm
 	- Changed include file structure and added universal include path <DGM/fsm.hpp>
 
 dgm-ai-fsm v1.0.0

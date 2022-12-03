@@ -108,6 +108,7 @@ namespace dgm
 			}
 
 		public:
+			Fsm() = default;
 			Fsm(std::map<StateType, State<BlackboardType, StateType>>&& states)
 				: states(states)
 			{}
