@@ -1,4 +1,4 @@
-dgm-ai-fsm v1.x.x
+dgm-ai-fsm v1.1.0
 	- Add default constructor for dgm::fsm::Fsm
 	- Changed include file structure and added universal include path <DGM/fsm.hpp>
 	- Fixed bad lambda return annotations for And, Or and Not decorators
