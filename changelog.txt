@@ -1,5 +1,6 @@
-dgm-fsm-lib v1.1.x
+dgm-fsm-lib v1.2.0
  - Fixed unexpected tokens in fsm.hpp 
+ - Fixed name shadowing warning in `setStateToStringHelper`
 
 dgm-fsm-lib v1.1.0
  - Add default constructor for dgm::fsm::Fsm

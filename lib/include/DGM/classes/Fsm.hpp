@@ -139,9 +139,15 @@ namespace dgm
 			}
 
 			void setStateToStringHelper(
-				std::map<StateType, std::string>&& stateToString)
+				std::map<StateType, std::string>&& _stateToString)
 			{
-				this->stateToString = stateToString;
+				stateToString = std::move(_stateToString);
+			}
+
+			void setStateToStringHelper(
+				const std::map<StateType, std::string>& _stateToString)
+			{
+				stateToString = _stateToString;
 			}
 
 			void setLogging(
