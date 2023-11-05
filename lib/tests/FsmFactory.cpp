@@ -34,17 +34,17 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 	factory.registerPredicate("cond1", [&] (const Blackboard&) -> bool
 	{
 		cond1_callCnt++;
-	return false;
+		return false;
 	});
 	factory.registerPredicate("cond2", [&] (const Blackboard&) -> bool
 	{
 		cond2_callCnt++;
-	return false;
+		return false;
 	});
 	factory.registerPredicate("cond3", [&] (const Blackboard&) -> bool
 	{
 		cond3_callCnt++;
-	return false;
+		return false;
 	});
 
 	factory.registerLogic("logic1", [&] (Blackboard&) { logic1_callCnt++; });
@@ -62,7 +62,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 			}}
 		};
 
-		dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		fsm.update(blackboard);
 
 		REQUIRE(logic1_callCnt == 1u);
@@ -86,7 +86,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 			}}
 		};
 
-		dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		fsm.update(blackboard);
 		fsm.update(blackboard);
 
@@ -110,7 +110,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 			}}
 		};
 
-		dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		fsm.update(blackboard);
 
 		REQUIRE(logic1_callCnt == 1u);
@@ -130,7 +130,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 
 		REQUIRE_NOTHROW([&] ()
 		{
-			dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+			dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		} ());
 	}
 
@@ -151,7 +151,7 @@ TEST_CASE("[FsmFactory]", "[FsmFactory]")
 			}}
 		};
 
-		dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+		dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 
 		std::stringstream log;
 		fsm.setLogging(true, log);
@@ -177,7 +177,7 @@ FSM::update(State = End):
 
 		REQUIRE_THROWS([&] ()
 		{
-			dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+			dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		} ());
 	}
 
@@ -193,7 +193,7 @@ FSM::update(State = End):
 
 		REQUIRE_THROWS([&] ()
 		{
-			dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+			dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		} ());
 	}
 
@@ -209,7 +209,7 @@ FSM::update(State = End):
 
 		REQUIRE_THROWS([&] ()
 		{
-			dgm::fsm::Fsm<Blackboard, unsigned> fsm = factory.loadFromFile("unused");
+			dgm::fsm::Fsm fsm = factory.loadFromFile("unused");
 		} ());
 	}
 

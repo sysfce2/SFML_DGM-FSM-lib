@@ -1,39 +1,17 @@
 #pragma once
 
-#include <functional>
-#include <vector>
 #include <map>
 #include <utility>
 #include <string>
 #include <format>
 #include <ostream>
 #include <iostream>
-#include <type_traits>
+#include <DGM/classes/FsmTypes.hpp>
 
 namespace dgm
 {
 	namespace fsm
 	{
-		template<typename T>
-		concept StateTypeConcept = std::is_scoped_enum_v<T> || (std::is_arithmetic_v<T> && std::is_unsigned_v<T>);
-
-		template<class BlackboardType>
-		using Condition = std::function<bool(const BlackboardType&)>;
-
-		template<class BlackboardType, StateTypeConcept StateType>
-		using Transition = std::pair<Condition<BlackboardType>, StateType>;
-
-		template<class BlackboardType>
-		using Logic = std::function<void(BlackboardType&)>;
-
-		template<class BlackboardType, StateTypeConcept StateType>
-		struct State
-		{
-			std::vector<Transition<BlackboardType, StateType>> transitions;
-			Logic<BlackboardType> logic;
-			StateType targetState = StateType();
-		};
-
 		/**
 		 * \brief Final state machine implementation
 		 *
@@ -42,16 +20,6 @@ namespace dgm
 		 *
 		 * It even has restrictions on what can be passed down to each
 		 * behaviour or predicate function.
-		 *
-		 * Namely there are two template parameters:
-		 * Ctx - stands for Context. This is supposed to be const at all
-		 * times and can contain like player position, map, obstacle placement, etc.
-		 *
-		 * BB - stands for BlackboardType. This is mutable context of the AI,
-		 * this should contain currently selected target, timers, etc.
-		 *
-		 * Last template StateType is the type of the State enumeration. It has to be
-		 * an enum.
 		 *
 		 *
 		 * Rules that apply to this FSM:
@@ -66,11 +34,11 @@ namespace dgm
 		 *    true and transitions, or default logic executes and then transitions (keeping the current state
 		 *    is also transition). This prevents FSM from freezing the app by constantly looping.
 		 */
-		template<class BlackboardType, StateTypeConcept StateType>
+		template<StateTypeConcept StateType, class ... BlackboardTypes>
 		class Fsm final
 		{
 		private:
-			std::map<StateType, State<BlackboardType, StateType>> states;
+			std::map<StateType, State<StateType, BlackboardTypes...>> states;
 			StateType currentState = StateType();
 
 			// Logging
@@ -108,18 +76,18 @@ namespace dgm
 			}
 
 		public:
-			Fsm() = default;
-			Fsm(std::map<StateType, State<BlackboardType, StateType>>&& states)
-				: states(states)
+			//Fsm() = default;
+			constexpr Fsm(UniversalReference<std::map<StateType, State<StateType, BlackboardTypes...>>> auto&& states)
+				: states(std::forward<decltype(states)>(states))
 			{}
 
-			void update(BlackboardType& blackboard)
+			void update(BlackboardTypes&... blackboards)
 			{
 				logCurrentState();
 
 				for (auto&& transition : states[currentState].transitions)
 				{
-					if (transition.first(blackboard))
+					if (transition.first(blackboards...))
 					{
 						currentState = transition.second;
 						logTransitionTaken();
@@ -127,13 +95,13 @@ namespace dgm
 					}
 				}
 
-				states[currentState].logic(blackboard);
+				states[currentState].logic(blackboards...);
 				const bool looping = currentState == states[currentState].targetState;
 				currentState = states[currentState].targetState;
 				logTransitionTaken(true, looping);
 			}
 
-			void setState(StateType state) noexcept
+			constexpr void setState(StateType state) noexcept
 			{
 				currentState = state;
 			}

@@ -123,7 +123,7 @@ Integers are also allowed, but they're not as descriptive. Now the FSM construct
 auto buildFsm() {
 	using dgm::fsm::decorator::Merge;
 
-	return dgm::fsm::Builder<Blackboard, State>()
+	return dgm::fsm::Builder<State, Blackboard>()
 		.with(State::Start)
 			.when(CsvParser::isEof).goTo(State::End)
 			.orWhen(CsvParser::isComma).goTo(State::CommaFound)
@@ -143,6 +143,10 @@ auto buildFsm() {
 As you can see, `Blackboard` and `State` are required template parameters for the builder (and FSM itself) so typechecking can be performed. The parser logic should be pretty obvious from the FSM structure. Note use of the `Merge` decorator to fuse two primitives together to make more complicated behaviour. Also note that decorators require explicit template instantiation since C++ type deduction system is sometimes garbage.
 
 Returned object is your fsm. You can use `setState` to set to any state you need. By default it will be set to the default value of the `State` enum (`Start` in this case). Call `update` to perform single FSM "tick".
+
+#### Multiple blackboards
+
+You can use more than one blackboard type. This can be handy if you want the FSM method to get not only blackboard itself, but also a reference to the controlled NPC, its inventory, etc. Just write down all the types into the template. All FSM logics and conditions need to accept all types specified as blackboards, in correct order.
 
 ### dgm::fsm::Factory
 

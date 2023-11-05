@@ -29,24 +29,24 @@ namespace dgm
 			}
 		}
 
-		template<class BlackboardType>
-		class Factory final
+		template<class ... BlackboardTypes>
+		class [[nodiscard]] Factory final
 		{
 			LoaderInterface& loader;
-			std::map<std::string, Condition<BlackboardType>> predicates;
-			std::map<std::string, Logic<BlackboardType>> logics;
+			std::map<std::string, Condition<BlackboardTypes...>> predicates;
+			std::map<std::string, Logic<BlackboardTypes...>> logics;
 
 		public:
 			void registerPredicate(
 				const std::string& name,
-				Condition<BlackboardType> condition)
+				Condition<BlackboardTypes...> condition)
 			{
 				predicates[name] = condition;
 			}
 
 			void registerLogic(
 				const std::string& name,
-				Logic<BlackboardType> logic)
+				Logic<BlackboardTypes...> logic)
 			{
 				logics[name] = logic;
 			}
@@ -61,21 +61,21 @@ namespace dgm
 			}
 
 			[[nodiscard]]
-			Fsm<BlackboardType, unsigned> loadFromFile(const std::string& path) const
+			Fsm<unsigned, BlackboardTypes...> loadFromFile(const std::string& path) const
 			{
 				auto states = loader.loadFromFile(path);
 
-				std::map<unsigned, State<BlackboardType, unsigned>> finalStates;
+				std::map<unsigned, State<unsigned, BlackboardTypes...>> finalStates;
 				auto getCheckedStateId = [&] (unsigned id) -> unsigned
-				{
-					if (id >= states.size())
 					{
-						throw std::runtime_error("Referencing state that does not exist");
-					}
-					return id;
-				};
+						if (id >= states.size())
+						{
+							throw std::runtime_error("Referencing state that does not exist");
+						}
+						return id;
+					};
 
-				fsm::Logic<BlackboardType> doNothingStub = [] (BlackboardType&) {};
+				fsm::Logic<BlackboardTypes...> doNothingStub = [] (BlackboardTypes&...) {};
 				for (auto&& [stateId, state] : states)
 				{
 					auto& fstate = finalStates[stateId];
@@ -87,13 +87,13 @@ namespace dgm
 							getCheckedStateId(transition.second) });
 					}
 
-					Logic<BlackboardType> finalLogic = state.behaviors.empty()
+					Logic<BlackboardTypes...> finalLogic = state.behaviors.empty()
 						? doNothingStub
 						: logics.at(state.behaviors[0]);
 
 					for (unsigned i = 1; i < state.behaviors.size(); i++)
 					{
-						finalLogic = dgm::fsm::decorator::Merge<BlackboardType>(
+						finalLogic = dgm::fsm::decorator::Merge<BlackboardTypes...>(
 							finalLogic,
 							logics.at(state.behaviors[i]));
 					}
@@ -102,7 +102,7 @@ namespace dgm
 					fstate.targetState = getCheckedStateId(state.defaultTransition);
 				}
 
-				auto fsm = dgm::fsm::Fsm(std::move(finalStates));
+				auto fsm = dgm::fsm::Fsm<unsigned, BlackboardTypes...>(std::move(finalStates));
 
 				// Compute and set log helpers
 				std::map<unsigned, std::string> stateToString;
@@ -115,7 +115,7 @@ namespace dgm
 				return fsm;
 			}
 
-			Factory(LoaderInterface& loader)
+			constexpr Factory(LoaderInterface& loader) noexcept
 				: loader(loader)
 			{}
 		};

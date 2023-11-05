@@ -9,45 +9,45 @@ namespace dgm
 		namespace decorator
 		{
 
-			template<class BlackboardType>
+			template<class ... BlackboardTypes>
 			[[nodiscard]]
-			auto And(Condition<BlackboardType> cond1, Condition<BlackboardType> cond2)
+			auto And(Condition<BlackboardTypes...> cond1, Condition<BlackboardTypes...> cond2)
 			{
-				return[cond1, cond2] (const BlackboardType& bb)
-				{
-					return cond1(bb) && cond2(bb);
-				};
+				return[cond1, cond2] (const BlackboardTypes&... bb)
+					{
+						return cond1(bb...) && cond2(bb...);
+					};
 			}
 
-			template<class BlackboardType>
+			template<class ... BlackboardTypes>
 			[[nodiscard]]
-			auto Or(Condition<BlackboardType> cond1, Condition<BlackboardType> cond2)
+			auto Or(Condition<BlackboardTypes...> cond1, Condition<BlackboardTypes...> cond2)
 			{
-				return[cond1, cond2] (const BlackboardType& bb)
-				{
-					return cond1(bb) || cond2(bb);
-				};
+				return[cond1, cond2] (const BlackboardTypes&... bb)
+					{
+						return cond1(bb...) || cond2(bb...);
+					};
 			}
 
-			template<class BlackboardType>
+			template<class ... BlackboardTypes>
 			[[nodiscard]]
-			auto Not(Condition<BlackboardType> cond1)
+			auto Not(Condition<BlackboardTypes...> cond1)
 			{
-				return[cond1] (const BlackboardType& bb)
-				{
-					return !cond1(bb);
-				};
+				return[cond1] (const BlackboardTypes&... bb)
+					{
+						return !cond1(bb...);
+					};
 			}
 
-			template<class BlackboardType>
+			template<class ... BlackboardTypes>
 			[[nodiscard]]
-			auto Merge(Logic<BlackboardType> logic1, Logic<BlackboardType> logic2)
+			auto Merge(Logic<BlackboardTypes...> logic1, Logic<BlackboardTypes...> logic2)
 			{
-				return [logic1, logic2] (BlackboardType& bb)
-				{
-					logic1(bb);
-					logic2(bb);
-				};
+				return [logic1, logic2] (BlackboardTypes&... bb)
+					{
+						logic1(bb...);
+						logic2(bb...);
+					};
 			}
 
 		}

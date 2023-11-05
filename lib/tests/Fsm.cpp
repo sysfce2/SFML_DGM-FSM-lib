@@ -10,6 +10,17 @@ enum class State
 	End
 };
 
+struct Blackboard2
+{
+	int value = 0;
+};
+
+void twoBbsLogic(Blackboard& bb1, Blackboard2& bb2)
+{
+	bb1.pos = 42;
+	bb2.value = 69;
+}
+
 TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 {
 	unsigned logic1_cnt = 0;
@@ -28,7 +39,7 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 
 	SECTION("Properly executes FSM with one state and just default transitions")
 	{
-		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+		auto fsm = dgm::fsm::Builder<State, Blackboard>()
 			.with(State::Start)
 			.exec(logic1).andLoop()
 			.build();
@@ -41,7 +52,7 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 
 	SECTION("Properly executes FSM with two states and just default transitions")
 	{
-		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+		auto fsm = dgm::fsm::Builder<State, Blackboard>()
 			.with(State::Start)
 			.exec(logic1).andGoTo(State::End)
 			.with(State::End)
@@ -57,7 +68,7 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 
 	SECTION("Properly calls predicates on a state")
 	{
-		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+		auto fsm = dgm::fsm::Builder<State, Blackboard>()
 			.with(State::Start)
 			.when(predicate1).goTo(State::Start)
 			.orWhen(predicate2).goTo(State::Start)
@@ -70,9 +81,25 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 		REQUIRE(pred2_cnt == 1u);
 	}
 
+	SECTION("Can create FSM with multiple blackboards")
+	{
+		auto fsm = dgm::fsm::Builder<State, Blackboard, Blackboard2>()
+			.with(State::Start)
+			.exec(twoBbsLogic).andLoop()
+			.build();
+		fsm.setState(State::Start);
+
+		Blackboard bb1;
+		Blackboard2 bb2;
+		fsm.update(bb1, bb2);
+
+		REQUIRE(bb1.pos == 42);
+		REQUIRE(bb2.value == 69);
+	}
+
 	SECTION("Can take transitions without executing default behaviour")
 	{
-		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+		auto fsm = dgm::fsm::Builder<State, Blackboard>()
 			.with(State::Start)
 			.when(predicate3).goTo(State::End)
 			.otherwiseExec(logic1).andLoop()
@@ -96,7 +123,7 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
 
 		using dgm::fsm::decorator::Merge;
 
-		auto fsm = dgm::fsm::Builder<Blackboard, State>()
+		auto fsm = dgm::fsm::Builder<State, Blackboard>()
 			.with(State::Start)
 			.when(CsvParser::isEof).goTo(State::End)
 			.orWhen(CsvParser::isComma).goTo(State::CommaFound)

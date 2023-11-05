@@ -1,4 +1,6 @@
 dgm-fsm-lib v1.2.0
+ - `StateType` is always first template parameter
+ - There can be multiple blackboard structures for cases when the user wants to pass extra data in
  - Fixed unexpected tokens in fsm.hpp 
  - Fixed name shadowing warning in `setStateToStringHelper`
 
