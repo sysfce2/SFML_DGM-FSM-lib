@@ -1,3 +1,7 @@
+dgm-fsm-lib v1.3.0
+ - Decorators now accept variable number of parameters
+ - Intellisense no longer marks decorator function calls as syntactic errors due to different parameter deduction mechnism
+
 dgm-fsm-lib v1.2.0
  - `StateType` is always first template parameter
  - There can be multiple blackboard structures for cases when the user wants to pass extra data in

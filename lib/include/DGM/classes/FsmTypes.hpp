@@ -16,6 +16,18 @@ namespace dgm
 		template<class T, class Ref>
 		concept UniversalReference = std::is_same_v<Ref, T> || std::constructible_from<Ref, T>;
 
+		template<class Callable, class ... BlackboardTypes>
+		concept LogicCallable = requires (Callable && callable, BlackboardTypes& ... params)
+		{
+			callable(params...);
+		};
+
+		template<class Callable, class ... BlackboardTypes>
+		concept ConditionCallable = requires (Callable && callable, const BlackboardTypes& ... params)
+		{
+			{callable(params...)} -> std::same_as<bool>;
+		};
+
 		template<class ... BlackboardTypes>
 		using Condition = std::function<bool(const BlackboardTypes&...)>;
 

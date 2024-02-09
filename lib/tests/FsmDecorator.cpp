@@ -13,19 +13,31 @@ bool cond2(const Blackboard&)
 	return false;
 }
 
+int cnt = 0;
+
+void logic1(Blackboard&) {
+	cnt++;
+}
+
 TEST_CASE("[FsmDecorators]")
 {
 	Blackboard board;
 
 	SECTION("Can create conditions from decorators")
 	{
-		dgm::fsm::Condition<Blackboard> condAnd = dgm::fsm::decorator::And<Blackboard>(cond1, cond2);
+		using namespace dgm::fsm::decorator;
+
+		auto&& condAnd = And<Blackboard>(cond1, cond2, cond1, cond2);
 		REQUIRE_FALSE(condAnd(board));
 
-		dgm::fsm::Condition<Blackboard> condOr = dgm::fsm::decorator::Or<Blackboard>(cond1, cond2);
+		auto&& condOr = Or<Blackboard>(cond1, cond2);
 		REQUIRE(condOr(board));
 
-		dgm::fsm::Condition<Blackboard> condNot = dgm::fsm::decorator::Not<Blackboard>(cond1);
+		auto&& condNot = Not<Blackboard>(cond1);
 		REQUIRE_FALSE(condNot(board));
+
+		auto&& logic = Merge<Blackboard>(logic1, logic1, logic1);
+		logic(board);
+		REQUIRE(cnt == 3);
 	}
 }
