@@ -1,51 +1,31 @@
 cmake_minimum_required ( VERSION 3.19 )
 
-project ( libfsm )
+set ( TARGET libfsm )
 
-include_directories ( "${JSON_FOLDER}/include" )
-
-# Automatically include new source files
-file (
-	GLOB LIB_HEADERS
-	CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/DGM/*.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/DGM/classes/*.hpp"
-)
-
-file (
-	GLOB LIB_SOURCES
-	CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-)
-
-# Add source files to source group so MSVC organizes them into filters
-source_group (
-	TREE
-	"${CMAKE_CURRENT_SOURCE_DIR}"
-	FILES
-		${LIB_HEADERS}
-		${LIB_SOURCES}
-)
+bootstrap_clang_format()
+glob_headers_and_sources ( HEADERS SOURCES )
 
 # Setup build target
-add_library ( ${PROJECT_NAME} STATIC
-	${LIB_HEADERS} ${LIB_SOURCES}
-	"${CMAKE_CURRENT_SOURCE_DIR}/.editorconfig"
+add_library ( ${TARGET} STATIC
+	${HEADERS} ${SOURCES}
+	"${CMAKE_CURRENT_SOURCE_DIR}/.clang-format"
 )
 
-target_include_directories ( ${PROJECT_NAME}
+target_include_directories ( ${TARGET}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_compile_features( ${PROJECT_NAME}
-	INTERFACE ${MY_CXX_COMPILE_FEATURES}
+target_link_libraries ( ${TARGET}
+	LINK_PRIVATE nlohmann_json::nlohmann_json
 )
 
-target_compile_options ( ${PROJECT_NAME}
+target_compile_features( ${TARGET}
+	INTERFACE ${CXX_COMPILE_FEATURES}
+)
+
+target_compile_options ( ${TARGET}
 	PRIVATE ${CXX_COMPILE_OPTIONS}
 )
-
-add_subdirectory ( tests )
 
 # Packaging rules
 set ( DEBUG_BINARY_DIR   "${CMAKE_CURRENT_BINARY_DIR}/Debug" )
@@ -57,16 +37,16 @@ install (
 )
 
 install (
-	FILES        "${RELEASE_BINARY_DIR}/libfsm.lib"
+	FILES        "${RELEASE_BINARY_DIR}/${TARGET}.lib"
 	DESTINATION  "lib"
 )
 
 install (
-	FILES        "${DEBUG_BINARY_DIR}/libfsm-d.lib"
+	FILES        "${DEBUG_BINARY_DIR}/${TARGET}-d.lib"
 	DESTINATION  "lib"
 )
 
 install (
-	FILES        "${DEBUG_BINARY_DIR}/libfsm-d.pdb"
+	FILES        "${DEBUG_BINARY_DIR}/${TARGET}-d.pdb"
 	DESTINATION  "lib"
 )

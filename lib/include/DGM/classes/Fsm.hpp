@@ -1,135 +1,145 @@
 #pragma once
 
-#include <map>
-#include <utility>
-#include <string>
-#include <format>
-#include <ostream>
-#include <iostream>
 #include <DGM/classes/FsmTypes.hpp>
+#include <format>
+#include <iostream>
+#include <map>
+#include <ostream>
+#include <print>
+#include <string>
+#include <utility>
 
 namespace dgm
 {
-	namespace fsm
-	{
-		/**
-		 * \brief Final state machine implementation
-		 *
-		 * This FSM is tailored for game AI and as such,
-		 * it has some rules on how the states and transitions look like.
-		 *
-		 * It even has restrictions on what can be passed down to each
-		 * behaviour or predicate function.
-		 *
-		 *
-		 * Rules that apply to this FSM:
-		 * 1) Every state has a set of conditions. Each condition has associated state code.
-		 *    If condition evaluates to true, it transitions to associated state.
-		 * 2) Conditions cannot mutate state, not even BlackboardType.
-		 * 3) If all conditions are evaluated to false, default logic runs. Default logic
-		 *    is permitted to mutate BlackboardType state.
-		 * 4) After default logic executes, then FSM is permitted to transition to another state
-		 *    or it keeps the current one.
-		 * 4) Each update tick of FSM ends with a transition. So either a condition evaluates to
-		 *    true and transitions, or default logic executes and then transitions (keeping the current state
-		 *    is also transition). This prevents FSM from freezing the app by constantly looping.
-		 */
-		template<StateTypeConcept StateType, class ... BlackboardTypes>
-		class Fsm final
-		{
-		private:
-			std::map<StateType, State<StateType, BlackboardTypes...>> states;
-			StateType currentState = StateType();
+    namespace fsm
+    {
+        /**
+         * \brief Final state machine implementation
+         *
+         * This FSM is tailored for game AI and as such,
+         * it has some rules on how the states and transitions look like.
+         *
+         * It even has restrictions on what can be passed down to each
+         * behaviour or predicate function.
+         *
+         *
+         * Rules that apply to this FSM:
+         * 1) Every state has a set of conditions. Each condition has associated
+         * state code. If condition evaluates to true, it transitions to
+         * associated state. 2) Conditions cannot mutate state, not even
+         * BlackboardType. 3) If all conditions are evaluated to false, default
+         * logic runs. Default logic is permitted to mutate BlackboardType
+         * state. 4) After default logic executes, then FSM is permitted to
+         * transition to another state or it keeps the current one. 4) Each
+         * update tick of FSM ends with a transition. So either a condition
+         * evaluates to true and transitions, or default logic executes and then
+         * transitions (keeping the current state is also transition). This
+         * prevents FSM from freezing the app by constantly looping.
+         */
+        template<StateTypeConcept StateType, class... BlackboardTypes>
+        class Fsm final
+        {
 
-			// Logging
-			bool loggingEnabled = false;
-			std::reference_wrapper<std::ostream> log = std::cout;
-			std::map<StateType, std::string> stateToString;
+        public:
+            constexpr Fsm(
+                std::same_as<std::map<
+                    StateType,
+                    State<StateType, BlackboardTypes...>>> auto&& states)
+                : states(std::forward<decltype(states)>(states))
+            {
+            }
 
-		private:
-			[[nodiscard]]
-			std::string getStateName(StateType state) const noexcept
-			{
-				return stateToString.count(state)
-					? stateToString.at(state)
-					: "UNDEFINED(" + std::to_string(static_cast<int>(state)) + ")";
-			}
+            void update(BlackboardTypes&... blackboards)
+            {
+                logCurrentState();
 
-			void logCurrentState()
-			{
-				if (!loggingEnabled) return;
+                for (auto&& transition : states[currentState].transitions)
+                {
+                    if (transition.first(blackboards...))
+                    {
+                        currentState = transition.second;
+                        logTransitionTaken();
+                        return;
+                    }
+                }
 
-				log.get() << std::format(
-					"FSM::update(State = {}):\n",
-					getStateName(currentState));
-			}
+                states[currentState].logic(blackboards...);
+                const bool looping =
+                    currentState == states[currentState].targetState;
+                currentState = states[currentState].targetState;
+                logTransitionTaken(true, looping);
+            }
 
-			void logTransitionTaken(bool defaultTransition = false, bool loop = false)
-			{
-				if (!loggingEnabled)
-					return;
+            constexpr void setState(StateType state) noexcept
+            {
+                currentState = state;
+            }
 
-				log.get() << std::format("  {}, {}{}\n",
-					defaultTransition ? "behavior executed" : "condition hit",
-					loop ? "looping" : "jumping to ",
-					loop ? "" : getStateName(currentState));
-			}
+            void setStateToStringHelper(
+                std::map<StateType, std::string>&& _stateToString)
+            {
+                stateToString = std::move(_stateToString);
+            }
 
-		public:
-			//Fsm() = default;
-			constexpr Fsm(UniversalReference<std::map<StateType, State<StateType, BlackboardTypes...>>> auto&& states)
-				: states(std::forward<decltype(states)>(states))
-			{}
+            void setStateToStringHelper(
+                const std::map<StateType, std::string>& _stateToString)
+            {
+                stateToString = _stateToString;
+            }
 
-			void update(BlackboardTypes&... blackboards)
-			{
-				logCurrentState();
+            void setLogging(bool enabled, std::ostream& logger = std::cout)
+            {
+                loggingEnabled = enabled;
+                log = logger;
+            }
 
-				for (auto&& transition : states[currentState].transitions)
-				{
-					if (transition.first(blackboards...))
-					{
-						currentState = transition.second;
-						logTransitionTaken();
-						return;
-					}
-				}
+            [[nodiscard]] constexpr auto getState() const noexcept -> StateType
+            {
+                return currentState;
+            }
 
-				states[currentState].logic(blackboards...);
-				const bool looping = currentState == states[currentState].targetState;
-				currentState = states[currentState].targetState;
-				logTransitionTaken(true, looping);
-			}
+        private:
+            [[nodiscard]] std::string
+            getStateName(StateType state) const noexcept
+            {
+                return stateToString.count(state)
+                           ? stateToString.at(state)
+                           : "UNDEFINED("
+                                 + std::to_string(static_cast<int>(state))
+                                 + ")";
+            }
 
-			constexpr void setState(StateType state) noexcept
-			{
-				currentState = state;
-			}
+            void logCurrentState()
+            {
+                if (!loggingEnabled) return;
 
-			void setStateToStringHelper(
-				std::map<StateType, std::string>&& _stateToString)
-			{
-				stateToString = std::move(_stateToString);
-			}
+                std::print(
+                    log.get(),
+                    "FSM::update(State = {}):\n",
+                    getStateName(currentState));
+            }
 
-			void setStateToStringHelper(
-				const std::map<StateType, std::string>& _stateToString)
-			{
-				stateToString = _stateToString;
-			}
+            void logTransitionTaken(
+                bool defaultTransition = false, bool loop = false)
+            {
+                if (!loggingEnabled) return;
 
-			void setLogging(
-				bool enabled,
-				std::ostream& logger = std::cout)
-			{
-				loggingEnabled = enabled;
-				log = logger;
-			}
+                std::print(
+                    log.get(),
+                    "  {}, {}{}\n",
+                    defaultTransition ? "behavior executed" : "condition hit",
+                    loop ? "looping" : "jumping to ",
+                    loop ? "" : getStateName(currentState));
+            }
 
-			[[nodiscard]] constexpr auto getState() const noexcept -> StateType
-			{
-				return currentState;
-			}
-		};
-	}
-}
+        private:
+            std::map<StateType, State<StateType, BlackboardTypes...>> states;
+            StateType currentState = StateType();
+
+            // Logging
+            bool loggingEnabled = false;
+            std::reference_wrapper<std::ostream> log = std::cout;
+            std::map<StateType, std::string> stateToString;
+        };
+    } // namespace fsm
+} // namespace dgm
