@@ -1,3 +1,6 @@
+dgm-fsm-lib v1.4.0 changelog:
+ - addState and getCurrentlyAddedState methods were removed from fsm::Builder interface
+
 dgm-fsm-lib v1.3.0
  - Decorators now accept variable number of parameters
  - Intellisense no longer marks decorator function calls as syntactic errors due to different parameter deduction mechnism
