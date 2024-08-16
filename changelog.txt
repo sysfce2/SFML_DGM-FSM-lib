@@ -1,5 +1,6 @@
 dgm-fsm-lib v1.4.0 changelog:
- - addState and getCurrentlyAddedState methods were removed from fsm::Builder interface
+ - `addState` and `getCurrentlyAddedState` methods were removed from `dgm::fsm::Builder` interface
+ - Added `withGlobalErrorCondition` to `dgm::fsm::Builder` that allows to specify a global sink for all states when error happens
 
 dgm-fsm-lib v1.3.0
  - Decorators now accept variable number of parameters

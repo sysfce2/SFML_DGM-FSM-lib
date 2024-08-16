@@ -171,6 +171,54 @@ namespace dgm
             private:
                 builders::BuilderContext<StateType, BlackboardTypes...> context;
             };
+
+            template<StateTypeConcept StateType, class... BlackboardTypes>
+            class [[nodiscard]] FinalBuilder final
+            {
+            public:
+                FinalBuilder(
+                    BuilderContext<StateType, BlackboardTypes...>&& context,
+                    Transition<StateType, BlackboardTypes...>
+                        globalErrorTransition)
+                    : context(std::move(context))
+                    , globalErrorTransition(globalErrorTransition)
+                {
+                }
+
+                [[nodiscard]] auto build()
+                {
+                    return Fsm<StateType, BlackboardTypes...>(
+                        std::move(context.states), globalErrorTransition);
+                }
+
+            private:
+                BuilderContext<StateType, BlackboardTypes...> context;
+                Transition<StateType, BlackboardTypes...> globalErrorTransition;
+            };
+
+            template<StateTypeConcept StateType, class... BlackboardTypes>
+            class [[nodiscard]] GlobalErrorBuilder final
+            {
+            public:
+                GlobalErrorBuilder(
+                    BuilderContext<StateType, BlackboardTypes...>&& context,
+                    Condition<BlackboardTypes...> condition)
+                    : context(context), condition(condition)
+                {
+                }
+
+                [[nodiscard]] auto goTo(StateType state)
+                {
+                    return FinalBuilder<StateType, BlackboardTypes...>(
+                        std::move(context),
+                        Transition<StateType, BlackboardTypes...>(
+                            condition, state));
+                }
+
+            private:
+                BuilderContext<StateType, BlackboardTypes...> context;
+                Condition<BlackboardTypes...> condition;
+            };
         } // namespace builders
 
         template<StateTypeConcept StateType, class... BlackboardTypes>
@@ -195,6 +243,13 @@ namespace dgm
                 return builders::
                     EmptyStateBuilder<StateType, BlackboardTypes...>(
                         std::move(context));
+            }
+
+            [[nodiscard]] auto
+            withGlobalErrorCondition(Condition<BlackboardTypes...> condition)
+            {
+                return builders::GlobalErrorBuilder(
+                    std::move(context), condition);
             }
 
             [[nodiscard]] auto build()

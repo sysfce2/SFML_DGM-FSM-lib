@@ -4,6 +4,7 @@
 #include <format>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <ostream>
 #include <print>
 #include <string>
@@ -49,25 +50,38 @@ namespace dgm
             {
             }
 
+            constexpr Fsm(
+                std::same_as<std::map<
+                    StateType,
+                    State<StateType, BlackboardTypes...>>> auto&& states,
+                Transition<StateType, BlackboardTypes...> globalErrorTransition)
+                : states(std::forward<decltype(states)>(states))
+                , globalErrorTransition(globalErrorTransition)
+            {
+            }
+
             void update(BlackboardTypes&... blackboards)
             {
                 logCurrentState();
 
-                for (auto&& transition : states[currentState].transitions)
+                if (auto result = tryErrorTransition(blackboards...); result)
                 {
-                    if (transition.first(blackboards...))
-                    {
-                        currentState = transition.second;
-                        logTransitionTaken();
-                        return;
-                    }
+                    currentState = *result;
+                    logErrorTransitionTaken();
                 }
-
-                states[currentState].logic(blackboards...);
-                const bool looping =
-                    currentState == states[currentState].targetState;
-                currentState = states[currentState].targetState;
-                logTransitionTaken(true, looping);
+                else if (result = tryRegularTransition(blackboards...); result)
+                {
+                    currentState = *result;
+                    logConditionTransitionTaken();
+                }
+                else
+                {
+                    states[currentState].logic(blackboards...);
+                    const bool looping =
+                        currentState == states[currentState].targetState;
+                    currentState = states[currentState].targetState;
+                    logDefaultTransitionTaken(looping);
+                }
             }
 
             constexpr void setState(StateType state) noexcept
@@ -119,21 +133,60 @@ namespace dgm
                     getStateName(currentState));
             }
 
-            void logTransitionTaken(
-                bool defaultTransition = false, bool loop = false)
+            void logErrorTransitionTaken()
             {
                 if (!loggingEnabled) return;
-
                 std::print(
                     log.get(),
-                    "  {}, {}{}\n",
-                    defaultTransition ? "behavior executed" : "condition hit",
-                    loop ? "looping" : "jumping to ",
-                    loop ? "" : getStateName(currentState));
+                    "  error condition hit, jumping to {}\n",
+                    getStateName(currentState));
+            }
+
+            void logConditionTransitionTaken()
+            {
+                if (!loggingEnabled) return;
+                std::print(
+                    log.get(),
+                    "  condition hit, jumping to {}\n",
+                    getStateName(currentState));
+            }
+
+            void logDefaultTransitionTaken(bool looping)
+            {
+                if (!loggingEnabled) return;
+                std::print(
+                    log.get(),
+                    "  behavior executed, {}{}\n",
+                    looping ? "looping" : "jumping to ",
+                    looping ? "" : getStateName(currentState));
+            }
+
+            [[nodiscard]] std::optional<StateType>
+            tryErrorTransition(BlackboardTypes&... blackboards) const noexcept
+            {
+                if (!globalErrorTransition
+                    || !globalErrorTransition->first(blackboards...))
+                    return std::nullopt;
+                return globalErrorTransition->second;
+            }
+
+            [[nodiscard]] std::optional<StateType>
+            tryRegularTransition(BlackboardTypes&... blackboards) const noexcept
+            {
+                for (auto&& transition : states.at(currentState).transitions)
+                {
+                    if (transition.first(blackboards...))
+                    {
+                        return transition.second;
+                    }
+                }
+                return std::nullopt;
             }
 
         private:
             std::map<StateType, State<StateType, BlackboardTypes...>> states;
+            std::optional<Transition<StateType, BlackboardTypes...>>
+                globalErrorTransition = std::nullopt;
             StateType currentState = StateType();
 
             // Logging

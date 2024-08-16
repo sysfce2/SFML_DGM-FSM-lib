@@ -7,7 +7,8 @@ enum class State
     Start,
     CommaFound,
     NewlineFound,
-    End
+    End,
+    Error
 };
 
 struct Blackboard2
@@ -19,6 +20,50 @@ void twoBbsLogic(Blackboard& bb1, Blackboard2& bb2)
 {
     bb1.pos = 42;
     bb2.value = 69;
+}
+
+dgm::fsm::Fsm<State, Blackboard>
+createCsvFsm(bool errorOutOnExclamationMark = false)
+{
+    using dgm::fsm::decorator::Merge;
+    auto builder = dgm::fsm::Builder<State, Blackboard>()
+                       .with(State::Start)
+                       .when(CsvParser::isEof)
+                       .goTo(State::End)
+                       .orWhen(CsvParser::isComma)
+                       .goTo(State::CommaFound)
+                       .orWhen(CsvParser::isNewline)
+                       .goTo(State::NewlineFound)
+                       .otherwiseExec(CsvParser::advanceChar)
+                       .andLoop()
+                       .with(State::CommaFound)
+                       .exec(CsvParser::storeWord)
+                       .andGoTo(State::Start)
+                       .with(State::NewlineFound)
+                       .exec(Merge<Blackboard>(
+                           CsvParser::handleNewline, CsvParser::storeWord))
+                       .andGoTo(State::Start)
+                       .with(State::Error)
+                       .exec([](auto) {})
+                       .andLoop();
+
+    if (errorOutOnExclamationMark)
+    {
+        return builder.withGlobalErrorCondition(CsvParser::isExclamationMark)
+            .goTo(State::Error)
+            .build();
+    }
+
+    return builder.build();
+}
+
+std::map<State, std::string> getCsvParserLogHelper()
+{
+    return { { State::Start, "Start" },
+             { State::CommaFound, "CommaFound" },
+             { State::NewlineFound, "NewlineFound" },
+             { State::End, "End" },
+             { State::Error, "Error" } };
 }
 
 TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
@@ -141,34 +186,10 @@ TEST_CASE("Functionality", "[Fsm/FsmBuilder]")
     SECTION("Properly logs behaviour")
     {
         auto blackboard2 = Blackboard { .CSV = "a,b\nd\n" };
-
-        using dgm::fsm::decorator::Merge;
-
-        auto fsm = dgm::fsm::Builder<State, Blackboard>()
-                       .with(State::Start)
-                       .when(CsvParser::isEof)
-                       .goTo(State::End)
-                       .orWhen(CsvParser::isComma)
-                       .goTo(State::CommaFound)
-                       .orWhen(CsvParser::isNewline)
-                       .goTo(State::NewlineFound)
-                       .otherwiseExec(CsvParser::advanceChar)
-                       .andLoop()
-                       .with(State::CommaFound)
-                       .exec(CsvParser::storeWord)
-                       .andGoTo(State::Start)
-                       .with(State::NewlineFound)
-                       .exec(Merge<Blackboard>(
-                           CsvParser::handleNewline, CsvParser::storeWord))
-                       .andGoTo(State::Start)
-                       .build();
-
         std::stringstream log;
 
-        fsm.setStateToStringHelper({ { State::Start, "Start" },
-                                     { State::CommaFound, "CommaFound" },
-                                     { State::NewlineFound, "NewlineFound" },
-                                     { State::End, "End" } });
+        auto fsm = createCsvFsm();
+        fsm.setStateToStringHelper(getCsvParserLogHelper());
         fsm.setLogging(true, log);
 
         do
@@ -197,6 +218,43 @@ FSM::update(State = NewlineFound):
   behavior executed, jumping to Start
 FSM::update(State = Start):
   condition hit, jumping to End
+)";
+
+        REQUIRE(log.str() == refLog);
+    }
+
+    SECTION("Goes to error sink when condition is hit")
+    {
+        auto blackboard2 = Blackboard { .CSV = "a,b\n!d\n" };
+        std::stringstream log;
+
+        auto fsm = createCsvFsm(/* errorOutOnExclamationMark */ true);
+        fsm.setStateToStringHelper(getCsvParserLogHelper());
+        fsm.setLogging(true, log);
+
+        do
+        {
+            fsm.update(blackboard2);
+        } while (fsm.getState() != State::End
+                 && fsm.getState() != State::Error);
+
+        REQUIRE(fsm.getState() == State::Error);
+
+        const std::string refLog =
+            R"(FSM::update(State = Start):
+  behavior executed, looping
+FSM::update(State = Start):
+  condition hit, jumping to CommaFound
+FSM::update(State = CommaFound):
+  behavior executed, jumping to Start
+FSM::update(State = Start):
+  behavior executed, looping
+FSM::update(State = Start):
+  condition hit, jumping to NewlineFound
+FSM::update(State = NewlineFound):
+  behavior executed, jumping to Start
+FSM::update(State = Start):
+  error condition hit, jumping to Error
 )";
 
         REQUIRE(log.str() == refLog);
