@@ -26,26 +26,25 @@ dgm::fsm::Fsm<State, Blackboard>
 createCsvFsm(bool errorOutOnExclamationMark = false)
 {
     using dgm::fsm::decorator::Merge;
+    // clang-format off
     auto builder = dgm::fsm::Builder<State, Blackboard>()
-                       .with(State::Start)
-                       .when(CsvParser::isEof)
-                       .goTo(State::End)
-                       .orWhen(CsvParser::isComma)
-                       .goTo(State::CommaFound)
-                       .orWhen(CsvParser::isNewline)
-                       .goTo(State::NewlineFound)
-                       .otherwiseExec(CsvParser::advanceChar)
-                       .andLoop()
-                       .with(State::CommaFound)
-                       .exec(CsvParser::storeWord)
-                       .andGoTo(State::Start)
-                       .with(State::NewlineFound)
-                       .exec(Merge<Blackboard>(
-                           CsvParser::handleNewline, CsvParser::storeWord))
-                       .andGoTo(State::Start)
-                       .with(State::Error)
-                       .exec([](auto) {})
-                       .andLoop();
+        .with(State::Start)
+            .when(CsvParser::isEof).goTo(State::End)
+            .orWhen(CsvParser::isComma).goTo(State::CommaFound)
+            .orWhen(CsvParser::isNewline).goTo(State::NewlineFound)
+            .otherwiseExec(CsvParser::advanceChar)
+            .andLoop()
+        .with(State::CommaFound)
+            .exec(CsvParser::storeWord)
+            .andGoTo(State::Start)
+        .with(State::NewlineFound)
+            .exec(Merge<Blackboard>(
+                CsvParser::handleNewline, CsvParser::storeWord))
+            .andGoTo(State::Start)
+        .with(State::Error)
+            .exec([](auto) {})
+            .andLoop();
+    // clang-format on
 
     if (errorOutOnExclamationMark)
     {
