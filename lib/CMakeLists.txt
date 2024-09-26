@@ -1,6 +1,6 @@
-cmake_minimum_required ( VERSION 3.19 )
+cmake_minimum_required ( VERSION 3.26 )
 
-set ( TARGET libfsm )
+set ( TARGET ${PROJECT_NAME} )
 
 bootstrap_clang_format()
 glob_headers_and_sources ( HEADERS SOURCES )
@@ -11,21 +11,12 @@ add_library ( ${TARGET} STATIC
 	"${CMAKE_CURRENT_SOURCE_DIR}/.clang-format"
 )
 
-target_include_directories ( ${TARGET}
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+target_include_directories ( ${TARGET} PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  
+    $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries ( ${TARGET}
-	LINK_PRIVATE nlohmann_json::nlohmann_json
-)
-
-target_compile_features( ${TARGET}
-	INTERFACE ${CXX_COMPILE_FEATURES}
-)
-
-target_compile_options ( ${TARGET}
-	PRIVATE ${CXX_COMPILE_OPTIONS}
-)
+apply_compile_options ( ${TARGET} )
 
 # Packaging rules
 set ( DEBUG_BINARY_DIR   "${CMAKE_CURRENT_BINARY_DIR}/Debug" )
@@ -50,3 +41,23 @@ install (
 	FILES        "${DEBUG_BINARY_DIR}/${TARGET}-d.pdb"
 	DESTINATION  "lib"
 )
+
+install ( TARGETS ${TARGET}
+	EXPORT ${TARGET}Targets
+)
+
+install(EXPORT ${TARGET}Targets
+	FILE ${TARGET}Targets.cmake
+	NAMESPACE fsm::
+	DESTINATION lib/cmake/${TARGET})
+
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+	"${TARGET}ConfigVersion.cmake"
+	VERSION ${PROJECT_VERSION}
+	COMPATIBILITY SameMajorVersion)
+
+install(
+	FILES "${TARGET}Config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}ConfigVersion.cmake"
+    DESTINATION lib/cmake/${TARGET})

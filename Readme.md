@@ -1,19 +1,26 @@
-[![CI](https://github.com/nerudaj/dgm-fsm-lib/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/nerudaj/dgm-fsm-lib/actions/workflows/main.yml)
+[![CI](https://github.com/nerudaj/dgm-fsm-lib/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/nerudaj/dgm-fsm-lib/actions/workflows/main.yml) [![IntegrationTests](https://github.com/nerudaj/fsm-lib/actions/workflows/integration.yml/badge.svg?branch=main)](https://github.com/nerudaj/fsm-lib/actions/workflows/integration.yml)
 
-# dgm-fsm-lib
+# fsm-lib
 
-This is a C++ library meant for building and running Final State Machines, with the emphasis on their usage in videogame AI. While FSMs are quite simple structures to implement, the code usually quickly devolves into spaghetti mess. This library enforces one particular paradigm to how FSM should look like so the code can stay consistent and hopefully clean.
+This is a C++23 library for creating hierarchical finite state machines, with the emphasis on their usage in videogame AI.
+
+While FSMs are quite simple structures to implement, the code usually quickly devolves into a spaghetti mess. This library enforces one particular paradigm to how FSM should look like so the code can stay consistent and hopefully clean.
 
 ## Table of contents
 
- * [FSM architecture](#fsm-architecture)
- * [How to build the FSM](#how-to-build-the-fsm)
-	* [dgm::fsm::Builder](#dgmfsmbuilder)
-	* [dgm::fsm::Factory](#dgmfsmfactory)
+ * [Concepts](#concepts)
+ * [Integration](#integration)
+ * [Building the FSM](#building-the-fsm)
+ * [Blackboards](#blackboards)
+ * [Logging](#logging)
+ * [Diagram exports](#diagram-exports)
+ * [Who's using fsm-cpp?](#whos-using-fsm-cpp)
 
-## FSM architecture
+## Concepts
 
-FSM usually consists of two things - set of conditions that allow it to jump from state to state and some behaviour that is executed in a particular state. Quite often, those get intermixed, so following code is no exception:
+FSM fall under two categories - Mealy and Moore. Mealy produces output (executes behavior) while transitioning from one state to another. Moore produces outputs based solely on the current state. As I percieve Moore to be more intuitive for programming, this library produces Moore's FSMs.
+
+FSMs consists of states and each state usually consists of two things. A set of conditional transitions that allow it to jump from state to state, and some behavior that is executed when the state is ticked and none of the transitions was taken. In practical code that employs switch-case approach to implement a FSM, these get intermixed quite often, so the following code is nothing unusual:
 
 ```c++
 case State::DoSomething:
@@ -36,201 +43,111 @@ case State::DoSomething:
 } break;
 ```
 
-This code implies FSM where each state in fact does job of multiple states but because the switch-case code would get really long, programmers tend to abbreviate. However, this obfuscates the general logic behind the FSM, which can really complicate developing game AI (with the second problem being that the AI designed would like to avoid C++ code and use predefined primitives instead).
+This code is bad because `State::DoSomething` covertly does a job of two states, but the author didn't want to bother with introduction of a new enumerated value and abbreviated the code. This obfuscates the general logic behind the FSM, which can really complicate developing game AI. It also makes the life of an AI designer harder as they would like to work with logical primitives and compose them into more complex actions.
 
-FSMs created with this library require that each state has a set of conditions and target state for each condition if it is evaluated to true, exactly one behavior function and a state to jump to afterwards. A condition with associate target state is called a **transition**. For such state, the following rules apply:
+This library mandates that each FSM state has an ordered set of conditions associated with transitions, exactly one behavior and a default transition. When a state is "ticked", the following happens:
 
-1) First evaluate all transitions in order. If any condition is evaluated to true, FSM jumps to associated state.
+1) Evaluate all conditions in order. If any condition is evaluated to true, FSM jumps to associated state (executes transition).
 2) If no condition was true, execute behavior.
-3) After executing behavior, jump to associated state. State can jump back to itself, which means it is a **looping** state.
+3) After executing behavior, execute default transition. State can jump back to itself, which means it is a **looping** state.
 
-Algorithm called above also defines boundaries for single "tick" when updating the FSM. In other words, once FSM jumps to another state, `update` function returns, so while badly defined FSM can loop inifitely on some state, each individual `update` will always finish.
+The above algorithm defines clear boundaries for a single `tick` when updating the machine. The tick ends when FSM executes a transition, so you don't have to worry about the tick function getting stuck in an infinite loop.
 
-This library realies heavily on `std::function` object usage which means that it allows you to glue primitive functions together, so your conditions or behaviors can be quite complex if you need to.
+In addition to these simple rules governing each state, a global error condition can be specified that is evaluated first when ticking the FSM and if evaluated to true, it transitions to an error submachine.
 
-Also, this library on usage of **Blackboards** for storing information your behaviors and conditions might require.
+And since I am mentioning submachines, this library allows you to define hierarchical FSMs that can transition to sub-machines and when such sub-machine finishes, it transitions back to a given state in a calling machine. Sub-machine can also transition into other sub-machines, although recursion is prevented by design.
 
-## How to build the FSM
+**Blackboards** are used to store all contextual information. Unlike many other similar libraries that give you string-indexed storages that can hold a couple predefined types, here you can just provide any struct, as long as it publicly inherits from `fsm::BlackboardBase`.
 
-There are three supported ways of building the FSM. You can always use just the `Fsm.hpp` header and build everything by hand, but that is discouraged. Instead, it is recommended to use `FsmBuilder.hpp` which helps you with a prepared set of builders. Or you can use `FsmFactory.hpp` and load the FSM from file. Loading requires a working implementation of a `dgm::fsm::LoaderInterface` so you can either implement your own, or you can use existing JSON parser (from `FsmJsonLoader.hpp`). Format of the JSON is described below.
+## Integration
 
-For the examples, we want to build super simple CSV parser. Suppose we already have our Blackboard definition and all logic primites we need:
+You can easily get the library using CPM, or you can get it from the Releases tab. More on both approaches [here](docs/Integration.md).
 
-```c++ 
-struct Blackboard {
-	const std::string CSV;
-	std::vector<std::vector<std::string>> data = { {} };
-	unsigned pos = 0;
-	std::string currentWord = "";
-};
+## Building the FSM
 
-class CsvParser {
-public:
-	static bool isEof(const Blackboard& bb) {
-		return bb.CSV.size() <= bb.pos;
-	}
-
-	static bool isComma(const Blackboard& bb) {
-		return bb.CSV[bb.pos] == ',';
-	}
-
-	static bool isNewline(const Blackboard& bb) {
-		return bb.CSV[bb.pos] == '\n';
-	}
-
-	static void storeWord(Blackboard& bb) {
-		bb.data.back().push_back(bb.currentWord);
-		bb.currentWord = "";
-		bb.pos++;
-	}
-
-	static void handleNewline(Blackboard& bb) {
-		bb.data.push_back({});
-	}
-
-	static void advanceChar(Blackboard& bb) {
-		bb.currentWord += bb.CSV[bb.pos];
-		bb.pos++;
-	}
-};
-
-```
-
-This CSV parser will be super simple, it only deals with commas for delimiting colums and newlines for delimiting rows. The `Blackboard::data` is the output matrix for parsed CSV, the `Blackboard::CSV` is the input string. You can notice that all function primitives in `CsvParser` are static - since the `Blackboard` is the only thing that carries state, function primites can be free standing functions.
-
-Also notice that conditions must accept `const Blackboard&`, while behaviors accept `Blackboard&`, because they are allowed to mutate its state.
-
-### dgm::fsm::Builder
-
-When using the builder pattern, it is recommended for you to define scoped enum with all necessary states:
+All you need to do is to include `<fsm/Builder.hpp>` and construct the machine using a Builder object. For an example CSV parser without quotation support, a builder code could look like this:
 
 ```c++
-enum class State
+auto&& machine = fsm::Builder<CsvBlackboard>()
+    .withErrorMachine() <-- When the current state belongs to this submachine, the fsm::Fsm::isErrored returns true
+    .noGlobalEntryCondition()
+        .withEntryState("Start")
+            .exec(doNothing).andLoop() // <-- You can either loop indefinitely or you can all restart and go back to main entry state
+        .done()
+    .withMainMachine()
+        .withEntryState("Start") // <-- entry point of the whole FSM
+            .when(isEof).error() // <-- When error is called, FSM transitions to the entry point of the error machine
+            .orWhen(isSeparator).goToState("HandleSeparator")
+            .orWhen(isNewline).goToState("HandleNewline")
+            .otherwiseExec(advanceChar).andLoop()
+        .withState("HandleSeparator")
+            .exec(handleSeparator).andGoToState("Start")
+        .withState("HandleNewline")
+            .exec([] (CsvBlackboard& bb) { // <-- Anything convertible to std::function can be used
+                    handleSeparator(bb);
+                    handleNewline(bb);
+                }).andGoToState("PostNewline")
+        .withState("PostNewline")
+            .when(isEof).finish() // <-- When the FSM finishes, the fsm::Fsm::isFinished returns true and nothing happens
+            .otherwiseExec(doNothing).andGoToState("Start")
+        .done()
+    .build();
+```
+
+Function callbacks that appear in "when/orWhen" statements must have the following signature: `bool(const CsvBlackboard&)` and callbacks that appear in "exec/otherwiseExec" have signature of `void(CsvBlackboard&)`. Thus you can only modify the contents of the blackboard in the latter.
+
+Refer to [example code](examples/02-simple-fsm/Main.cpp) for more info.
+
+## Blackboards
+
+To create a compatible blackboard, just do this:
+
+```c++
+#include <fsm/Types.hpp>
+
+struct Blackboard : fsm::BlackboardBase
 {
-	Start,
-	CommaFound,
-	NewlineFound,
-	End
+	// Put your required properties here
 };
 ```
 
-Integers are also allowed, but they're not as descriptive. Now the FSM construction:
+Please use `struct` instead of `class` or at least inherit publicly so the properties in the base struct are public. Do not prefix your attributes with double underscores, these should be reserved for the library.
 
-```c++
-#include <FsmBuilder.hpp>
-#include <FsmDecorators.hpp>
+`fsm::BlackboardBase` contains the state of the FSM - what state should be ticked, call stack of sub-machines so it knows where to return, etc.
 
-auto buildFsm() {
-	using dgm::fsm::decorator::Merge;
+The blackboard is subject to logging. By default, you'll only get its address for basic identification. If you want to log the contents of the blackboard, you need to specialize `std::formatter` for that purpose.
 
-	return dgm::fsm::Builder<State, Blackboard>()
-		.with(State::Start)
-			.when(CsvParser::isEof).goTo(State::End)
-			.orWhen(CsvParser::isComma).goTo(State::CommaFound)
-			.orWhen(CsvParser::isNewline).goTo(State::NewlineFound)
-			.otherwiseExec(CsvParser::advanceChar).andLoop()
-		.with(State::CommaFound)
-			.exec(CsvParser::storeWord).andGoTo(State::Start)
-		.with(State::NewlineFound)
-			.exec(Merge<Blackboard>(
-				CsvParser::handleNewline,
-				CsvParser::storeWord)
-			).andGoTo(State::Start)
-		.build();
-}
-```
-
-As you can see, `Blackboard` and `State` are required template parameters for the builder (and FSM itself) so typechecking can be performed. The parser logic should be pretty obvious from the FSM structure. Note use of the `Merge` decorator to fuse two primitives together to make more complicated behaviour. Also note that decorators require explicit template instantiation since C++ type deduction system is sometimes garbage.
-
-Returned object is your fsm. You can use `setState` to set to any state you need. By default it will be set to the default value of the `State` enum (`Start` in this case). Call `update` to perform single FSM "tick".
-
-#### Multiple blackboards
-
-You can use more than one blackboard type. This can be handy if you want the FSM method to get not only blackboard itself, but also a reference to the controlled NPC, its inventory, etc. Just write down all the types into the template. All FSM logics and conditions need to accept all types specified as blackboards, in correct order.
-
-### dgm::fsm::Factory
-
-Alternative to building your FSM in code (and the need to recompile it each time the structure changes) can be to define it in some external file and load it at runtime. This requires use of the `dgm::fsm::Factory` and appropriate loader.
-
-```c++
-#include <FsmFactory.hpp>
-#include <FsmJsonLoader.hpp>
-
-auto buildFsm(const std::string &path) {
-	dgm::fsm::JsonLoader loader;
-	dgm::fsm::Factory<Blackboard> factory(loader);
-	
-	factory.registerPredicate("isEof", CsvParser::isEof);
-	factory.registerPredicate("isComma", CsvParser::isComma);
-	factory.registerPredicate("isNewline", CsvParser::isNewline);
-	
-	factory.registerLogic("advanceChar", CsvParser::advanceChar);
-	factory.registerLogic("handleNewline", CsvParser::handleNewline);
-	factory.registerLogic("storeWord", CsvParser::storeWord);
-	
-	return factory.loadFromFile(path);
-}
-```
-
-Note that `Factory` only accepts `Blackboard` type, but no state type. This is so external file does not depend on how many state you've allowed it to have and translates everything to integers. But, you have to register available predicates and behaviors and names under which they will be parsed in the source file.
-
-Since this example uses `JsonLoader`, let's go over how the JSON file looks like:
-
-```json
-[
-	{
-		"name": "StateStart",
-		"transitions": [
-			{
-				"condition": "isEof",
-				"target": "StateFinish"
-			},
-			{
-				"condition": "isComma",
-				"target": "StateCommaFound"
-			},
-			{
-				"condition": "isNewline",
-				"target": "StateNewlineFound"
-			}
-		],
-		"behaviors": [
-			"advanceChar"
-		],
-		"defaultTransition": "StateStart"
-	},
-	{
-		"name": "StateCommaFound",
-		"transitions": [],
-		"behaviors": [
-			"storeWord"
-		],
-		"defaultTransition": "StateStart"
-	},
-	{
-		"name": "StateNewlineFound",
-		"transitions": [],
-		"behaviors": [
-			"handleNewline",
-			"storeWord"
-		],
-		"defaultTransition": "StateStart"
-	},
-	{
-		"name": "StateFinish",
-		"transitions": [],
-		"behaviors": [],
-		"defaultTransition": "StateFinish"
-	}
-]
-```
-
-As mentioned before, state names are converted into integers. Those integers will be indices in the main JSON array.
-
-> NOTE: If you were inclined to help me with some visual designed for the FSM - that would be very appreciated! Also, you can use `getAnnotations` method on the factory to get JSON string with all registered primitives (which would be necessary import for such designer).
+Refer to [example code](examples/01-loggable-blackboard/Main.cpp) for minimal implementation of such specialization.
 
 ## Logging
 
-Library has some basic logging capabilities that can be enabled by `fsm::Fsm::setLoggingEnabled`, which also allows you to define your log target (by default stdout).
+The library comes pre-packaged with a simple CSV-based logger, but you can implement your own if you wish. The default logger can be used like this:
 
-Optionally you can also call `fsm::Fsm::setStateToStringHelper` so state names are pretty printed in the logs. When FSM is created via factory, it will be set to log the names as they are defined in the source file.
+```c++
+#include <fsm/logging/CsvLogger.hpp>
+
+//... create machine
+auto&& logger = CsvLogger("path/to/log.csv");
+machine.setLogger(logger); // logger must outlive machine
+```
+
+## Diagram exports
+
+The library offers the ability to export a diagram representation of the FSM. Currently the only supported format is Mermaid, which you can paste into the [Mermaid online editor](https://mermaid.live/).
+
+You can export just by including `<fsm/exports/MermaidExporter.hpp` and calling the export function right before the build function:
+
+```c++
+auto&& machine = fsm::Builder<Blackboard>()
+	// ... building machine
+    .exportDiagram(fsm::MermaidExporter(std::cout))
+    .build();
+```
+
+A diagram for the CSV machine then looks like this:
+
+![CSV parser FSM](examples/03-exporting-diagrams/diagram.png)
+
+## Who's using fsm-cpp?
+
+ * [Rend](https://nerudaj.itch.io/Rend) - Retro arena FPS
