@@ -1,5 +1,5 @@
 fsm-cpp v2.0.0 changelog:
- - Library renamed from dgm-fsm-lib to just fsm-cpp
+ - Library renamed from dgm-fsm-lib to just fsm-lib
  - Everything was rewritten from ground up
  - Now supports:
 	- Hierarchical FSMs
