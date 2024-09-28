@@ -217,7 +217,7 @@ namespace fsm
         }
 
     private:
-        static inline NullLogger defaultLogger = NullLogger();
+        NullLogger defaultLogger = NullLogger();
         std::reference_wrapper<LoggerInterface> logger = defaultLogger;
         std::vector<std::string> stateIdToName;
         std::vector<detail::CompiledState<BbT>> states;
