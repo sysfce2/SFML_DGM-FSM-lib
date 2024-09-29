@@ -12,4 +12,6 @@ apply_compile_options ( ${TARGET} )
 enable_autoformatter ( ${TARGET} )
 execute_example_as_test ( ${TARGET} )
 
-set_target_properties( ${TARGET} PROPERTIES FOLDER "examples" )
+set_target_properties( ${TARGET} PROPERTIES
+	FOLDER "examples"
+)
