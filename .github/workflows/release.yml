@@ -1,10 +1,9 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - '*'
   workflow_dispatch:
 
 env:
@@ -32,7 +31,7 @@ jobs:
       run: |
         mkdir "${{env.BUILD_DIR}}"
         cd "${{env.BUILD_DIR}}"
-        cmake ..
+        cmake .. -D BUILD_TESTS=OFF BUILD_EXAMPLES=OFF
       shell: cmd
 
     - name: Build
@@ -42,9 +41,13 @@ jobs:
         cmake --build . --config Release
       shell: cmd
 
-    - name: Test
+    - name: Pack
       working-directory: ${{env.BUILD_DIR}}
-      run: |
-        ctest -C Debug
-        ctest -C Release
-      shell: cmd
+      run: cpack
+      
+    - name: Store artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dgm-fsm-lib
+        path: ${{env.BUILD_DIR}}/*.zip
+        retention-days: 5
