@@ -113,7 +113,7 @@ namespace fsm::detail
         constexpr MachineBackTransitionBuilder(
             BuilderContext<BbT>&& context,
             MachineId targetMachineName,
-            Condition<BbT>&& condition) noexcept
+            ConditionConcept<BbT> auto&& condition) noexcept
             : context(std::move(context))
             , targetMachineName(targetMachineName)
             , condition(std::move(condition))
@@ -314,7 +314,8 @@ namespace fsm::detail
     {
     public:
         constexpr ConditionTransitionBuilder(
-            BuilderContext<BbT>&& context, Condition<BbT>&& condition) noexcept
+            BuilderContext<BbT>&& context,
+            ConditionConcept<BbT> auto&& condition) noexcept
             : context(std::move(context)), condition(std::move(condition))
         {
         }
@@ -395,7 +396,8 @@ namespace fsm::detail
     {
     public:
         constexpr ConditionTransitionErrorBuilder(
-            BuilderContext<BbT>&& context, Condition<BbT>&& condition) noexcept
+            BuilderContext<BbT>&& context,
+            ConditionConcept<BbT> auto&& condition) noexcept
             : context(std::move(context)), condition(std::move(condition))
         {
         }
@@ -446,7 +448,7 @@ namespace fsm::detail
         StateBuilderBase(const StateBuilderBase&) = delete;
 
     protected:
-        auto whenBaseImpl(Condition<BbT>&& condition)
+        auto whenBaseImpl(ConditionConcept<BbT> auto&& condition)
         {
             if constexpr (IsErrorMachine)
             {
@@ -460,7 +462,7 @@ namespace fsm::detail
             }
         }
 
-        auto execBaseImpl(Action<BbT>&& action)
+        auto execBaseImpl(ActionConcept<BbT> auto&& action)
         {
             getCurrentlyBuiltState(context).action = std::move(action);
 
@@ -504,7 +506,7 @@ namespace fsm::detail
         /**
          * When ticked, check this condition.
          */
-        auto when(Condition<BbT>&& condition)
+        auto when(ConditionConcept<BbT> auto&& condition)
         {
             return StateBuilderBase<BbT, IsSubmachine, IsErrorMachine>::
                 whenBaseImpl(std::move(condition));
@@ -513,7 +515,7 @@ namespace fsm::detail
         /**
          * When ticked, execute this action.
          */
-        auto exec(Action<BbT>&& action)
+        auto exec(ActionConcept<BbT> auto&& action)
         {
             return StateBuilderBase<BbT, IsSubmachine, IsErrorMachine>::
                 execBaseImpl(std::move(action));
@@ -542,7 +544,7 @@ namespace fsm::detail
         /**
          * Declare another condition for this state.
          */
-        auto orWhen(Condition<BbT>&& condition)
+        auto orWhen(ConditionConcept<BbT> auto&& condition)
         {
             return StateBuilderBase<BbT, IsSubmachine, IsErrorMachine>::
                 whenBaseImpl(std::move(condition));
@@ -552,7 +554,7 @@ namespace fsm::detail
          * Declare default action that is performed when no condition
          * is fulfilled.
          */
-        auto otherwiseExec(Action<BbT>&& action)
+        auto otherwiseExec(ActionConcept<BbT> auto&& action)
         {
             return StateBuilderBase<BbT, IsSubmachine, IsErrorMachine>::
                 execBaseImpl(std::move(action));
@@ -730,7 +732,7 @@ namespace fsm::detail
          * before anything else. If condition is fulfilled, the FSM transitions
          * into entry state of the error machine.
          */
-        auto useGlobalEntryCondition(Condition<BbT>&& condition)
+        auto useGlobalEntryCondition(ConditionConcept<BbT> auto&& condition)
         {
             context.useGlobalError = true;
             context.errorCondition = std::move(condition);

@@ -43,6 +43,21 @@ namespace fsm
     {
     };
 
+    template<class Callable, class BlackboardType>
+    concept ConditionConcept =
+        requires(Callable&& fn, const BlackboardType& bb) {
+            {
+                fn(bb)
+            } -> std::same_as<bool>;
+        } && BlackboardTypeConcept<BlackboardType>;
+
+    template<class Callable, class BlackboardType>
+    concept ActionConcept = requires(Callable&& fn, BlackboardType& bb) {
+        {
+            fn(bb)
+        } -> std::same_as<void>;
+    } && BlackboardTypeConcept<BlackboardType>;
+
     namespace detail
     {
         template<BlackboardTypeConcept BbT>
