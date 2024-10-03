@@ -41,7 +41,7 @@ install (
 	DESTINATION  "lib"
 )
 
-if ( NOT DEFINED ${PROJECT_VERSION} )
+if ( "${PROJECT_VERSION}" STREQUAL "" )
 	install ( TARGETS ${TARGET}
 		EXPORT ${TARGET}Targets
 	)
@@ -57,7 +57,7 @@ if ( NOT DEFINED ${PROJECT_VERSION} )
 	write_basic_package_version_file(
 		"${TARGET}ConfigVersion.cmake"
 		VERSION ${PROJECT_VERSION}
-		COMPATIBILITY SameMajorVersio
+		COMPATIBILITY SameMajorVersion
 	)
 
 	install(
