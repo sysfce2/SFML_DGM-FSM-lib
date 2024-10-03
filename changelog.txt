@@ -1,5 +1,6 @@
 fsm-cpp v2.0.1 changelog:
  - Added `fsm::ActionConcept` and `fsm::ConditionConcept` that are used to harden the `fsm::Builder` API
+ - Fix: `fsm::MermaidExporter` now correctly shows transitions to submachines that immediately finish afterwards
 
 fsm-cpp v2.0.0 changelog:
  - Library renamed from dgm-fsm-lib to just fsm-lib
