@@ -79,6 +79,8 @@ namespace fsm
         {
             if (blackboard.__stateIdxs.empty()) return;
 
+            auto start = std::chrono::high_resolution_clock::now();
+
             auto currentStateIdx = detail::popTopState(blackboard);
             assert(currentStateIdx < states.size());
             auto& state = states[currentStateIdx];
@@ -86,16 +88,20 @@ namespace fsm
             auto log = [&](const std::string& message,
                            const std::string& targetStateName)
             {
+                auto duration =
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::high_resolution_clock::now() - start);
+
                 logger.get().log(
                     reinterpret_cast<std::uintptr_t>(this),
                     stateIdToName[currentStateIdx],
                     blackboard,
                     message,
-                    targetStateName);
+                    targetStateName,
+                    duration);
             };
 
-#define _BIND(x)                                                               \
-    std::bind(&Fsm<BbT>::x, this, std::ref(blackboard), std::cref(state))
+#define _BIND(x) [&] { return x(blackboard, state); }
 
             std::optional<Log> result =
                 evaluateGlobalErrorCondition(blackboard, currentStateIdx)

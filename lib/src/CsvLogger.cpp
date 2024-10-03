@@ -17,18 +17,19 @@ void fsm::CsvLogger::logHeaders()
     std::println(
         outstream,
         "MachineId,BlackboardId,BlackboardLog,Message,CurrentStateName,"
-        "TargetStateName");
+        "TargetStateName,Duration (us)");
 }
 
 void fsm::CsvLogger::logImplementation(const Log& log)
 {
     std::println(
         outstream,
-        "{},{},{},{},{},{}",
+        "{},{},{},{},{},{},{}",
         log.machineId,
         log.blackboardId,
         log.blackboardLog,
         log.message,
         log.currentStateName,
-        log.targetStateName);
+        log.targetStateName,
+        log.duration.count());
 }

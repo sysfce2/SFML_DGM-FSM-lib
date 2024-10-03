@@ -29,7 +29,7 @@ TEST_CASE("[Logger]")
             std::ignore = fsm::CsvLogger(stream);
         }
 
-        REQUIRE(stream.str() == "MachineId,BlackboardId,BlackboardLog,Message,CurrentStateName,TargetStateName\n");
+        REQUIRE(stream.str() == "MachineId,BlackboardId,BlackboardLog,Message,CurrentStateName,TargetStateName,Duration (us)\n");
     }
 
     SECTION("Logs headers to given path")
@@ -42,11 +42,11 @@ TEST_CASE("[Logger]")
 
         {
             std::ifstream load("./log.txt");
-            load >> line;
+            std::getline(load, line);
         }
 
         unlink("./log.txt");
 
-        REQUIRE(line == "MachineId,BlackboardId,BlackboardLog,Message,CurrentStateName,TargetStateName");
+        REQUIRE(line == "MachineId,BlackboardId,BlackboardLog,Message,CurrentStateName,TargetStateName,Duration (us)");
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <format>
 #include <fsm/Types.hpp>
 #include <string>
@@ -20,6 +21,7 @@ namespace fsm
          * being ticked \param blackboard  Blackboard that is being updated
          *  \param message  Verbose message about what is happening
          *  \param targetStateName  Name of the state the FSM will transition to
+         *  \param duration  Duration of the fsm::tick (optional)
          */
         template<BlackboardTypeConcept BlackboardType>
         void
@@ -27,7 +29,9 @@ namespace fsm
             const std::string& currentStateName,
             const BlackboardType& blackboard,
             const std::string& message,
-            const std::string& targetStateName)
+            const std::string& targetStateName,
+            std::chrono::duration<long long, std::micro> duration =
+                std::chrono::duration<long long, std::micro>::zero())
         {
             if constexpr (IsFormatterSpecializedForBlackboard<
                               BlackboardType,
@@ -41,6 +45,7 @@ namespace fsm
                     .message = message,
                     .currentStateName = currentStateName,
                     .targetStateName = targetStateName,
+                    .duration = duration,
                 });
             }
             else
@@ -53,6 +58,7 @@ namespace fsm
                     .message = message,
                     .currentStateName = currentStateName,
                     .targetStateName = targetStateName,
+                    .duration = duration,
                 });
             }
         }
@@ -66,6 +72,7 @@ namespace fsm
             std::string message;
             std::string currentStateName;
             std::string targetStateName;
+            std::chrono::duration<long long, std::micro> duration;
         };
 
         virtual void logImplementation(const Log& log) = 0;
