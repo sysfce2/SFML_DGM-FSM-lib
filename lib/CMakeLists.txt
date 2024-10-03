@@ -41,7 +41,7 @@ install (
 	DESTINATION  "lib"
 )
 
-if ( "${PROJECT_VERSION}" NOT STREQUAL "" )
+if ( NOT "${PROJECT_VERSION}" STREQUAL "" )
 	install ( TARGETS ${TARGET}
 		EXPORT ${TARGET}Targets
 	)
