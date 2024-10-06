@@ -14,7 +14,7 @@ While FSMs are quite simple structures to implement, the code usually quickly de
  * [Blackboards](#blackboards)
  * [Logging](#logging)
  * [Diagram exports](#diagram-exports)
- * [Who's using fsm-cpp?](#whos-using-fsm-cpp)
+ * [Who's using fsm-lib?](#whos-using-fsm-lib)
 
 ## Concepts
 
@@ -148,6 +148,6 @@ A diagram for the CSV machine then looks like this:
 
 ![CSV parser FSM](examples/03-exporting-diagrams/diagram.png)
 
-## Who's using fsm-cpp?
+## Who's using fsm-lib?
 
  * [Rend](https://nerudaj.itch.io/Rend) - Retro arena FPS
