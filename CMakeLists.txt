@@ -52,8 +52,11 @@ install (
 
 # Packaging
 if ( ${PROJECT_IS_TOP_LEVEL} )
-	set ( COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
-	message ( "Computed compiler ID: ${COMPILER_ID}" )
+    if ( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" )
+        set ( COMPILER_ID "${CMAKE_CXX_COMPILER_ID}-${MSVC_TOOLSET_VERSION}" )
+    else ()
+        message ( FATAL_ERROR "Unsupported compiler ID: ${CMAKE_CXX_COMPILER_ID}" )
+    endif ()
 
 	set ( CPACK_GENERATOR "ZIP" )
 	set ( CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${FULL_PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${COMPILER_ID}-${CMAKE_GENERATOR_PLATFORM}" )
