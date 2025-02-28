@@ -29,7 +29,7 @@ if ( NOT "${PROJECT_VERSION}" STREQUAL "" )
     )
 
     install (
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}ConfigVersion.cmake
         DESTINATION lib/cmake/${TARGET}
     )
 else()
