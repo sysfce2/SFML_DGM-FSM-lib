@@ -6,9 +6,6 @@ on:
       - '*'
   workflow_dispatch:
 
-env:
-  BUILD_DIR: ${{github.workspace}}/vsbuild
-
 jobs:
   build:
     runs-on: windows-2022
