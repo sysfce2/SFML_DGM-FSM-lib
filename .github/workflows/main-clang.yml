@@ -1,0 +1,45 @@
+name: CI-Ninja-Clang
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  BUILD_DIR: ${{github.workspace}}/vsbuild
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [windows-2022, ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.26.1'
+
+    - name: Check cmake version
+      run: cmake --version
+
+    - name: Configure CMake
+      run: |
+        mkdir "${{env.BUILD_DIR}}"
+        cd "${{env.BUILD_DIR}}"
+        cmake -G Ninja -D CMAKE_CXX_COMPILER=clang++ ..
+
+    - name: Build
+      working-directory: ${{env.BUILD_DIR}}
+      run: |
+        cmake --build .
+
+    - name: Test
+      working-directory: ${{env.BUILD_DIR}}
+      run: |
+        ctest --output-on-failure

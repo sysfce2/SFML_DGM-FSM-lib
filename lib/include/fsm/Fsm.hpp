@@ -18,6 +18,7 @@
 #include <ranges>
 #include <string>
 #include <utility>
+#include <version>
 
 namespace fsm
 {
@@ -162,8 +163,14 @@ namespace fsm
         std::optional<Log> evaluateStateConditions(
             BbT& blackboard, const detail::CompiledState<BbT>& state)
         {
+#ifdef __cpp_lib_ranges_enumerate
             for (const auto& [idx, condition] :
                  std::views::enumerate(state.conditionalTransitions))
+#else
+            for (const auto& [idx, condition] : std::views::zip(
+                     std::views::iota(0u, state.conditionalTransitions.size()),
+                     state.conditionalTransitions))
+#endif
             {
                 if (condition.onConditionHit(blackboard))
                 {
