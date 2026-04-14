@@ -54,7 +54,7 @@ namespace fsm
         {
         }
 
-        Fsm(Fsm&&) = delete;
+        Fsm(Fsm&&) = default;
         Fsm(const Fsm&) = delete;
 
     public:
