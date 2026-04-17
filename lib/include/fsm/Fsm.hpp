@@ -54,7 +54,13 @@ namespace fsm
         {
         }
 
-        Fsm(Fsm&&) = default;
+        /* NOTE:
+        Cannot define copy/move constructors because if the class uses the
+        defaultLogger, the logger reference wrapper points to a wrong location
+        after move. And if the logger was set to something outside of this class,
+        the reference wrapper would stay ok. There is no way of telling.
+        */
+        Fsm(Fsm&&) = delete;
         Fsm(const Fsm&) = delete;
 
     public:

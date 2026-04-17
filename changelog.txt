@@ -1,6 +1,3 @@
-fsm-cpp v2.x.x changelog:
- - `fsm::Fsm` is now movable
-
 fsm-cpp v2.1.1 changelog:
  - Release can now be included into your CMakeLists through `find_package`
  - Added alias `fsm::fsm-lib`, you should use that for linking
