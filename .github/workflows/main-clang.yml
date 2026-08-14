@@ -25,14 +25,28 @@ jobs:
       with:
         cmake-version: '3.26.1'
 
+    - name: Install dependencies
+      if: matrix.platform == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install libc++-dev
+
     - name: Check cmake version
       run: cmake --version
 
-    - name: Configure CMake
+    - name: Configure CMake (windows)
+      if: matrix.platform == 'windows-2022'
       run: |
         mkdir "${{env.BUILD_DIR}}"
         cd "${{env.BUILD_DIR}}"
         cmake -G Ninja -D CMAKE_CXX_COMPILER=clang++ ..
+
+    - name: Configure CMake (ubuntu)
+      if: matrix.platform == 'ubuntu-latest'
+      run: |
+        mkdir "${{env.BUILD_DIR}}"
+        cd "${{env.BUILD_DIR}}"
+        cmake -G Ninja -D CMAKE_CXX_COMPILER=clang++-18 -D CMAKE_CXX_FLAGS="-stdlib=libc++" ..
 
     - name: Build
       working-directory: ${{env.BUILD_DIR}}

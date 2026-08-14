@@ -15,7 +15,6 @@
 #include <map>
 #include <optional>
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <string>
 #include <utility>
@@ -57,6 +56,9 @@ namespace fsm
 
         Fsm(Fsm&&) = default;
         Fsm(const Fsm&) = delete;
+
+        Fsm& operator=(Fsm&&) = default;
+        Fsm& operator=(const Fsm&) = delete;
 
     public:
         void setLogger(LoggerInterface& _logger)
